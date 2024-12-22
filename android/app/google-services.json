@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "338221186802",
+    "project_id": "exversio-dd2ca",
+    "storage_bucket": "exversio-dd2ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338221186802:android:ad76934af84777389e5a6b",
+        "android_client_info": {
+          "package_name": "exversio.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDabN4o8Vfheudqwcc1Mlfn9O5jeaGoXco"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,15 @@
+const { getDefaultConfig } = require("@react-native/metro-config");
+
+module.exports = (async () => {
+  const defaultConfig = await getDefaultConfig();
+
+  return {
+    transformer: {
+      babelTransformerPath: require.resolve("react-native-svg-transformer"),
+    },
+    resolver: {
+      assetExts: [...defaultConfig.resolver.assetExts, "png", "jpg", "jpeg", "svg"], // Ensure "png" is included
+      sourceExts: [...defaultConfig.resolver.sourceExts, "svg"],
+    },
+  };
+})();

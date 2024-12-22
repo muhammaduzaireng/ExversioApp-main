@@ -1,0 +1,741 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, FlatList, Alert } from 'react-native';
+import artistProfileStyles from '../../../styles/artist/artistProfileStyles';
+import artistPostStyles from '../../../styles/artist/artistPostStyles';
+import dashboardStyles from '../../../styles/dashboardStyles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NavigationBar from '../../components/NavigationBar';
+import Player from '../../components/Player';
+
+const ArtistProfileScreen = () => {
+    const [content, setContent] = useState('');
+    const [media, setMedia] = useState(null);
+    const [artistNames, setArtistNames] = useState('Unknown Artist'); // State for artist name
+    const [posts, setPosts] = useState([]);
+    const [artistId, setArtistId] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [activeCommentPostId, setActiveCommentPostId] = useState(null);
+    const [newCommentText, setNewCommentText] = useState('');
+
+    useEffect(() => {
+        const fetchArtistIdAndUserId = async () => {
+            try {
+                const storedUserId = await AsyncStorage.getItem('userId');
+                if (storedUserId) {
+                    setUserId(parseInt(storedUserId, 10));
+                    const response = await fetch(`http://10.0.2.2:3001/get-artist-id?userId=${storedUserId}`);
+                    const data = await response.json();
+                    console.log('Artist ID response data:', data);
+                    if (data.success) {
+                        setArtistId(data.artistId);
+                        fetchArtistName(data.artistId); // Fetch the artist's name after setting artist ID
+                    } else {
+                        Alert.alert('Notice', data.message || 'User is not an approved artist');
+                        navigation.navigate('DashboardScreen');
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching artistId and userId:', error);
+                Alert.alert('Error', 'Failed to fetch artist ID');
+            }
+        };
+        fetchArtistIdAndUserId();
+    }, []);
+
+    // Fetch artist's name based on artist ID
+    const fetchArtistName = async (artistId) => {
+        try {
+            const response = await fetch(`http://10.0.2.2:3001/get-artist-name?artistId=${artistId}`);
+            const data = await response.json();
+            if (data.success && data.artist_name) {
+                setArtistNames(data.artist_name);
+            }
+        } catch (error) {
+            console.error('Error fetching artist name:', error);
+            Alert.alert('Error', 'Failed to fetch artist name.');
+        }
+    };
+
+    const fetchPosts = async () => {
+        if (!artistId || !userId) return;
+        try {
+            const response = await fetch(`http://10.0.2.2:3001/get-posts?artistId=${artistId}&userId=${userId}`);
+            const data = await response.json();
+            console.log('Fetch posts response:', data);
+            if (data.success && Array.isArray(data.posts)) {
+                setPosts(data.posts);
+            } else {
+                setPosts([]);
+            }
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            Alert.alert('Error', 'Failed to fetch posts.');
+        }
+    };
+
+    useEffect(() => {
+        if (artistId && userId) {
+            fetchPosts();
+        }
+    }, [artistId, userId]);
+
+    const handleComment = async (postId, commentText) => {
+        // ...existing comment handling code
+    };
+
+    const handleLike = async (postId) => {
+        // ...existing like handling code
+    };
+
+    const renderHeader = () => (
+        <View>
+            <View style={artistProfileStyles.headerContainer}>
+                <Image source={require('../../../assets/profile/profile-image.jpg')} style={artistProfileStyles.coverImage} />
+                <View style={artistProfileStyles.artistInfoContainer}>
+                    <View style={artistProfileStyles.profileContainer}>
+                        <Image source={require('../../../assets/profile/profile-image.jpg')} style={artistProfileStyles.profileImage} />
+                    </View>
+                    <Text style={artistProfileStyles.artistName}>{artistNames}</Text> {/* Display artist name here */}
+                    <Text style={artistProfileStyles.artistDescription}>
+                        Lorem Ipsum es simplemente el texto de relleno de las imprentas y archivos de texto.
+                    </Text>
+                    <TouchableOpacity style={artistProfileStyles.subscribeButton}>
+                        <Text style={artistProfileStyles.subscribeButtonText}>Subscribe €5 per month</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            <View style={artistProfileStyles.tabsContainer}>
+                <TouchableOpacity style={artistProfileStyles.tabButtonActive}>
+                    <Text style={artistProfileStyles.tabButtonTextActive}>All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={artistProfileStyles.tabButton}>
+                    <Text style={artistProfileStyles.tabButtonText}>Music</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={artistProfileStyles.tabButton}>
+                    <Text style={artistProfileStyles.tabButtonText}>Videos</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={artistProfileStyles.tabButton}>
+                    <Text style={artistProfileStyles.tabButtonText}>Pictures</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={artistProfileStyles.tabButton}>
+                    <Text style={artistProfileStyles.tabButtonText}>About</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
+    const renderPost = ({ item }) => (
+        <View style={dashboardStyles.postContainer}>
+            <View style={dashboardStyles.postHeader}>
+                <Image source={require('../../../assets/profile/profile-image.jpg')} style={dashboardStyles.avatar} />
+                <View style={dashboardStyles.userInfo}>
+                    <View style={dashboardStyles.userRow}>
+                        <Text style={dashboardStyles.username}>{item.artist_name || artistNames}</Text> {/* Display artist name from post or state */}
+                        <Image source={require('../../../assets/icons/icons8-blue-tick.png')} style={dashboardStyles.verifiedIcon} />
+                    </View>
+                    <Text style={dashboardStyles.timestamp}>{item.timestamp}</Text>
+                </View>
+            </View>
+
+            <Text style={dashboardStyles.postText}>{item.content}</Text>
+
+            {item.media_url && item.media_type === 'image' && (
+                <Image source={{ uri: item.media_url }} style={artistPostStyles.postMedia} />
+            )}
+
+            {item.media_url && item.media_type === 'audio' && (
+                <View style={artistPostStyles.audioContainer}>
+                    <Text>Audio file: {item.media_url}</Text>
+                </View>
+            )}
+
+            <View style={dashboardStyles.postActions}>
+                <Text style={dashboardStyles.likeCount}>{item.like_count || 0}</Text>
+                <TouchableOpacity onPress={() => handleLike(item.id)}>
+                    <Image
+                        source={require('../../../assets/icons/8542029_heart_love_like_icon.png')}
+                        style={[
+                            dashboardStyles.actionIconLike,
+                            { tintColor: item.isLiked ? 'red' : 'white' },
+                        ]}
+                    />
+                </TouchableOpacity>
+                <Text style={dashboardStyles.commentCount}>{item.comments ? item.comments.length : 0}</Text>
+                <TouchableOpacity onPress={() => setActiveCommentPostId(item.id)}>
+                    <Image source={require('../../../assets/icons/icons8-comment.png')} style={dashboardStyles.actionIconComment} />
+                </TouchableOpacity>
+            </View>
+
+            {activeCommentPostId === item.id && (
+                <View style={dashboardStyles.commentInputContainer}>
+                    <TextInput
+                        style={dashboardStyles.commentInput}
+                        placeholder="Write a comment..."
+                        value={newCommentText}
+                        onChangeText={setNewCommentText}
+                    />
+                    <TouchableOpacity onPress={() => handleComment(item.id, newCommentText)}>
+                        <Text style={dashboardStyles.commentSubmitButton}>Submit</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {item.comments && item.comments.map((comment) => (
+                <View key={comment.id} style={dashboardStyles.commentContainer}>
+                    <Text style={dashboardStyles.commentText}>{comment.text}</Text>
+                </View>
+            ))}
+        </View>
+    );
+
+    return (
+        <View style={artistProfileStyles.container}>
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.id.toString()}
+                ListHeaderComponent={renderHeader}
+                renderItem={renderPost}
+            />
+            <Player />
+            <NavigationBar />
+        </View>
+    );
+};
+
+export default ArtistProfileScreen;
+
+
+
+<ScrollView contentContainerStyle={dashboardStyles.contentContainer}>
+                <View style={dashboardStyles.postContainer}>
+                    <View style={dashboardStyles.postHeader}>
+                        <Image source={require('../../assets/profile/profile-image.jpg')} style={dashboardStyles.avatar} />
+                        <View style={dashboardStyles.userInfo}>
+                            <View style={dashboardStyles.userRow}>
+                                <Text style={dashboardStyles.username}>KWAMZ</Text>
+                                <Image source={require('../../assets/icons/icons8-blue-tick.png')} style={dashboardStyles.verifiedIcon} />
+                            </View>
+                            <Text style={dashboardStyles.timestamp}>5 hours ago</Text>
+                        </View>
+                    </View>
+
+                    <Text style={dashboardStyles.postText}>Just dropped ‘Shake It’\nStream it now! :)</Text>
+                    
+
+                    <View style={dashboardStyles.iconWrapper}>
+                        <Image source={require('../../assets/icons/370075_send_chat_communication_email_letter_icon.png')} style={dashboardStyles.actionIconMessage} />
+                    </View>
+                </View>
+
+                <View style={dashboardStyles.postActions}>
+                    <Text style={dashboardStyles.likeCount}>{likeCount}</Text>
+                    <TouchableOpacity onPress={handleLikePress}>
+                        <Image
+                            source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
+                            style={[
+                                dashboardStyles.actionIconLike,
+                                { tintColor: isLiked ? 'red' : 'white' },
+                            ]}
+                        />
+                    </TouchableOpacity>
+                    <Text style={dashboardStyles.commentCount}>{comments.length}</Text>
+                    <TouchableOpacity onPress={handleCommentPress}>
+                        <Image source={require('../../assets/icons/icons8-comment.png')} style={dashboardStyles.actionIconComment} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Comment Section - Only visible when isCommentSectionVisible is true */}
+                {isCommentSectionVisible && (
+                    <View style={dashboardStyles.commentsContainer}>
+                        {comments.length > 0 && comments.map((comment) => (
+                            <View key={comment.id} style={dashboardStyles.commentItem}>
+                                <Image source={comment.avatar} style={dashboardStyles.commentAvatar} />
+                                <View>
+                                    <Text style={dashboardStyles.commentUsername}>{comment.username}</Text>
+                                    <Text style={dashboardStyles.commentText}>{comment.text}</Text>
+                                </View>
+                            </View>
+                        ))}
+                        <TextInput
+                            style={dashboardStyles.commentInput}
+                            placeholder="Add a comment..."
+                            placeholderTextColor="#888"
+                            value={newComment}
+                            onChangeText={setNewComment}
+                        />
+                        <Button title="Submit" onPress={handleAddComment} />
+                    </View>
+                )}
+                {/* Repeat for other posts */}
+                <View style={dashboardStyles.postContainer}>
+                    <View style={dashboardStyles.postHeader}>
+                        <Image source={require('../../assets/profile/profile-image.jpg')} style={dashboardStyles.avatar} />
+                        <View style={dashboardStyles.userInfo}>
+                            <View style={dashboardStyles.userRow}>
+                                <Text style={dashboardStyles.username}>KWAMZ</Text>
+                                <Image source={require('../../assets/icons/icons8-blue-tick.png')} style={dashboardStyles.verifiedIcon} />
+                            </View>
+                            <Text style={dashboardStyles.timestamp}>5 hours ago</Text>
+                        </View>
+                    </View>
+
+                    <View style={dashboardStyles.mediaContent}>
+                        <Image source={require('../../assets/profile/profile-image.jpg')} style={dashboardStyles.mediaImage} />
+                        <View style={dashboardStyles.mediaInfo}>
+                            <Text style={dashboardStyles.mediaTitle}>Like You</Text>
+                            <Text style={dashboardStyles.mediaArtist}>MAX.</Text>
+                        </View>
+                        
+                        <TouchableOpacity>
+                            <Image source={require('../../assets/icons/8723195_more_dots_icon.png')} style={dashboardStyles.moreIcon} />
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Image source={require('../../assets/icons/211876_play_icon.png')} style={dashboardStyles.playIcon} />
+                        </TouchableOpacity>
+                    </View>
+
+                    
+                </View>
+                <View style={dashboardStyles.postActions}>
+                        <Text style={dashboardStyles.likeCount}>{likeCount}</Text>
+                        <TouchableOpacity onPress={handleLikePress}>
+                            <Image
+                                source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
+                                style={[
+                                    dashboardStyles.actionIconLike,
+                                    { tintColor: isLiked ? 'red' : 'white' },
+                                ]}
+                            />
+                        </TouchableOpacity>
+                        <Text style={dashboardStyles.commentCount}>{commentCount}</Text>
+                        <TouchableOpacity onPress={handleCommentPress}>
+                            <Image source={require('../../assets/icons/icons8-comment.png')} style={dashboardStyles.actionIconComment} />
+                        </TouchableOpacity>
+                    </View>
+                {/* Repeat for other posts */}
+
+                <View style={dashboardStyles.postContainer}>
+                    <View style={dashboardStyles.postHeader}>
+                        <Image source={require('../../assets/profile/profile-image.jpg')} style={dashboardStyles.avatar} />
+                        <View style={dashboardStyles.userInfo}>
+                            <View style={dashboardStyles.userRow}>
+                                <Text style={dashboardStyles.username}>KWAMZ</Text>
+                                <Image source={require('../../assets/icons/icons8-blue-tick.png')} style={dashboardStyles.verifiedIcon} />
+                            </View>
+                            <Text style={dashboardStyles.timestamp}>5 hours ago</Text>
+                        </View>
+                    </View>
+
+                    <Text style={dashboardStyles.postText}>Just dropped ‘Shake It’\nStream it now! :)</Text>
+                    <Image source={require('../../assets/profile/profile-image.jpg')} style={dashboardStyles.postMedia} />
+
+                    <View style={dashboardStyles.iconWrapper}>
+                        <Image source={require('../../assets/icons/370075_send_chat_communication_email_letter_icon.png')} style={dashboardStyles.actionIconMessage} />
+                    </View>
+                </View>
+
+                <View style={dashboardStyles.postActions}>
+                    <Text style={dashboardStyles.likeCount}>{likeCount}</Text>
+                    <TouchableOpacity onPress={handleLikePress}>
+                        <Image
+                            source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
+                            style={[
+                                dashboardStyles.actionIconLike,
+                                { tintColor: isLiked ? 'red' : 'white' },
+                            ]}
+                        />
+                    </TouchableOpacity>
+                    <Text style={dashboardStyles.commentCount}>{comments.length}</Text>
+                    <TouchableOpacity onPress={handleCommentPress}>
+                        <Image source={require('../../assets/icons/icons8-comment.png')} style={dashboardStyles.actionIconComment} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Comment Section - Only visible when isCommentSectionVisible is true */}
+                {isCommentSectionVisible && (
+                    <View style={dashboardStyles.commentsContainer}>
+                        {comments.length > 0 && comments.map((comment) => (
+                            <View key={comment.id} style={dashboardStyles.commentItem}>
+                                <Image source={comment.avatar} style={dashboardStyles.commentAvatar} />
+                                <View>
+                                    <Text style={dashboardStyles.commentUsername}>{comment.username}</Text>
+                                    <Text style={dashboardStyles.commentText}>{comment.text}</Text>
+                                </View>
+                            </View>
+                        ))}
+                        <TextInput
+                            style={dashboardStyles.commentInput}
+                            placeholder="Add a comment..."
+                            placeholderTextColor="#888"
+                            value={newComment}
+                            onChangeText={setNewComment}
+                        />
+                        <Button title="Submit" onPress={handleAddComment} />
+                    </View>
+                )}
+            </ScrollView>
+
+
+
+
+
+
+
+            import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  Modal,
+  TextInput,
+  Alert,
+  Image,
+} from "react-native";
+import DocumentPicker from "react-native-document-picker";
+import * as ImagePicker from "react-native-image-picker";
+import axios from "axios";
+import Sound from "react-native-sound";
+import ProgressCircle from "react-native-progress-circle";
+import Slider from "@react-native-community/slider";
+
+const MusicApp = () => {
+  const BASE_URL = "http://localhost:3000"; // Replace with your server's URL
+  const [albums, setAlbums] = useState([]);
+  const [isAlbumModalVisible, setIsAlbumModalVisible] = useState(false);
+  const [newAlbum, setNewAlbum] = useState({ title: "", cover: null });
+  const [isMusicModalVisible, setIsMusicModalVisible] = useState(false);
+  const [selectedAlbumId, setSelectedAlbumId] = useState(null);
+  const [newMusic, setNewMusic] = useState({
+    title: "",
+    type: "",
+    file: null,
+    cover: null,
+  });
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentPlaying, setCurrentPlaying] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const soundRef = useRef(null);
+
+  // Fetch Albums
+  const fetchAlbums = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/albums`);
+      setAlbums(response.data);
+    } catch (error) {
+      console.error("Error fetching albums:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlbums();
+  }, []);
+
+  useEffect(() => {
+    if (soundRef.current) {
+      const interval = setInterval(() => {
+        soundRef.current.getCurrentTime((seconds) => {
+          setPlaybackPosition(seconds);
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentPlaying]);
+
+  // Select Image
+  const selectImage = async (callback) => {
+    try {
+      const result = await ImagePicker.launchImageLibrary({
+        mediaType: "photo",
+        quality: 1,
+      });
+      if (result.assets) {
+        callback(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error selecting image:", error);
+    }
+  };
+
+  // Create Album
+  const createAlbum = async () => {
+    if (!newAlbum.title.trim()) {
+      Alert.alert("Validation Error", "Album title is required.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("title", newAlbum.title);
+      if (newAlbum.cover) {
+        formData.append("cover", {
+          uri: newAlbum.cover,
+          name: `cover-${Date.now()}.jpg`,
+          type: "image/jpeg",
+        });
+      }
+
+      await axios.post(`${BASE_URL}/create-album`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      fetchAlbums();
+      setNewAlbum({ title: "", cover: null });
+      setIsAlbumModalVisible(false);
+      Alert.alert("Success", "Album created successfully!");
+    } catch (error) {
+      console.error("Error creating album:", error);
+      Alert.alert("Error", "Failed to create album.");
+    }
+  };
+
+  // Add Music
+  const addMusic = async () => {
+    const { title, type, file, cover } = newMusic;
+
+    if (!title.trim() || !file) {
+      Alert.alert("Validation Error", "Music title and file are required.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("album_id", selectedAlbumId);
+      formData.append("title", title);
+      formData.append("type", type);
+      formData.append("file", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      });
+
+      if (cover) {
+        formData.append("cover", {
+          uri: cover,
+          name: `cover-${Date.now()}.jpg`,
+          type: "image/jpeg",
+        });
+      }
+
+      await axios.post(`${BASE_URL}/add-music`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      });
+
+      setUploadProgress(0);
+      fetchAlbums();
+      setNewMusic({ title: "", type: "", file: null, cover: null });
+      setIsMusicModalVisible(false);
+      Alert.alert("Success", "Music added successfully!");
+    } catch (error) {
+      console.error("Error adding music:", error);
+      Alert.alert("Error", "Failed to add music.");
+    }
+  };
+
+  // Play Music
+  const playMusic = (fileUrl) => {
+    if (currentPlaying && soundRef.current) {
+      soundRef.current.stop(() => {
+        soundRef.current.release();
+      });
+    }
+
+    const sound = new Sound(fileUrl, null, (error) => {
+      if (error) {
+        console.error("Failed to load sound", error);
+        return;
+      }
+      setPlaybackDuration(sound.getDuration());
+      sound.play(() => {
+        sound.release();
+        setCurrentPlaying(null);
+        setIsPlaying(false);
+      });
+    });
+
+    soundRef.current = sound;
+    setCurrentPlaying(fileUrl);
+    setIsPlaying(true);
+  };
+
+  const pauseMusic = () => {
+    if (soundRef.current) {
+      soundRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const renderAlbum = ({ item }) => (
+    <View style={styles.albumCard}>
+      {item.cover ? (
+        <Image source={{ uri: item.cover }} style={styles.albumCover} />
+      ) : (
+        <View style={styles.albumCoverPlaceholder}>
+          <Text style={styles.albumCoverText}>{item.title[0]}</Text>
+        </View>
+      )}
+      <Text style={styles.albumTitle}>{item.title}</Text>
+      <FlatList
+        data={item.tracks}
+        keyExtractor={(track) => track.music_id.toString()}
+        renderItem={({ item: track }) => (
+          <View style={styles.trackCard}>
+            <Text style={styles.trackName}>{track.title}</Text>
+            <TouchableOpacity
+              onPress={() =>
+                currentPlaying === track.file_url && isPlaying
+                  ? pauseMusic()
+                  : playMusic(track.file_url)
+              }
+            >
+              <Text style={styles.playButtonText}>
+                {currentPlaying === track.file_url && isPlaying ? "Pause" : "Play"}
+              </Text>
+            </TouchableOpacity>
+            {currentPlaying === track.file_url && (
+              <Slider
+                style={styles.progressBar}
+                minimumValue={0}
+                maximumValue={playbackDuration}
+                value={playbackPosition}
+                onValueChange={(value) => {
+                  if (soundRef.current) {
+                    soundRef.current.setCurrentTime(value);
+                  }
+                }}
+              />
+            )}
+          </View>
+        )}
+      />
+      <TouchableOpacity
+        style={styles.addMusicButton}
+        onPress={() => {
+          setSelectedAlbumId(item.album_id);
+          setIsMusicModalVisible(true);
+        }}
+      >
+        <Text style={styles.addMusicButtonText}>Add Music</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.createAlbumButton}
+        onPress={() => setIsAlbumModalVisible(true)}
+      >
+        <Text style={styles.createAlbumButtonText}>Create Album</Text>
+      </TouchableOpacity>
+      <FlatList
+        data={albums}
+        keyExtractor={(item) => item.album_id.toString()}
+        renderItem={renderAlbum}
+      />
+
+      {/* Album Modal */}
+      <Modal visible={isAlbumModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Album Title"
+            value={newAlbum.title}
+            onChangeText={(text) => setNewAlbum({ ...newAlbum, title: text })}
+          />
+          <TouchableOpacity onPress={() => selectImage((uri) => setNewAlbum({ ...newAlbum, cover: uri }))}>
+            <Text style={styles.coverButtonText}>Select Cover Image</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={createAlbum}>
+            <Text style={styles.saveButtonText}>Save Album</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsAlbumModalVisible(false)}>
+            <Text style={styles.doneButtonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Music Modal */}
+      <Modal visible={isMusicModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Music Title"
+            value={newMusic.title}
+            onChangeText={(text) => setNewMusic({ ...newMusic, title: text })}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Music Type"
+            value={newMusic.type}
+            onChangeText={(text) => setNewMusic({ ...newMusic, type: text })}
+          />
+          <TouchableOpacity onPress={() => selectImage((uri) => setNewMusic({ ...newMusic, cover: uri }))}>
+            <Text style={styles.coverButtonText}>Select Cover Image</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              DocumentPicker.pick({ type: [DocumentPicker.types.audio] }).then((res) =>
+                setNewMusic({ ...newMusic, file: res[0] })
+              )
+            }
+          >
+            <Text style={styles.coverButtonText}>Select Music File</Text>
+          </TouchableOpacity>
+          {uploadProgress > 0 && uploadProgress < 100 && (
+            <ProgressCircle
+              percent={uploadProgress}
+              radius={30}
+              borderWidth={8}
+              color="#2EF3DD"
+              shadowColor="#999"
+              bgColor="#fff"
+            >
+              <Text style={{ fontSize: 12 }}>{`${uploadProgress}%`}</Text>
+            </ProgressCircle>
+          )}
+          <TouchableOpacity onPress={addMusic}>
+            <Text style={styles.saveButtonText}>Add Music</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsMusicModalVisible(false)}>
+            <Text style={styles.doneButtonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20, backgroundColor: "#1a1a1a" },
+  createAlbumButton: { backgroundColor: "#2EF3DD", padding: 15, borderRadius: 10, alignItems: "center" },
+  createAlbumButtonText: { fontSize: 16, fontWeight: "bold", color: "#000" },
+  albumCard: { marginBottom: 20, padding: 15, backgroundColor: "#3a3a3a", borderRadius: 10 },
+  albumCover: { width: "100%", height: 200, borderRadius: 10 },
+  albumCoverPlaceholder: { width: "100%", height: 200, justifyContent: "center", alignItems: "center", backgroundColor: "#555" },
+  albumCoverText: { fontSize: 24, fontWeight: "bold", color: "#fff" },
+  albumTitle: { marginTop: 10, fontSize: 20, color: "#fff", fontWeight: "bold" },
+  trackCard: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  trackName: { fontSize: 16, color: "#fff", flex: 1 },
+  playButtonText: { fontSize: 16, color: "#2EF3DD" },
+  addMusicButton: { backgroundColor: "#FFA500", padding: 10, borderRadius: 10, alignItems: "center" },
+  addMusicButtonText: { fontSize: 16, color: "#000", fontWeight: "bold" },
+  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.8)", padding: 20 },
+  input: { width: "100%", padding: 15, backgroundColor: "#fff", borderRadius: 10, marginBottom: 15 },
+  coverButtonText: { fontSize: 16, color: "#2EF3DD", marginBottom: 10 },
+  saveButtonText: { fontSize: 16, fontWeight: "bold", color: "#2EF3DD" },
+  doneButtonText: { fontSize: 16, fontWeight: "bold", color: "#2EF3DD" },
+  progressBar: { flex: 1, marginHorizontal: 10 },
+});
+
+export default MusicApp;
