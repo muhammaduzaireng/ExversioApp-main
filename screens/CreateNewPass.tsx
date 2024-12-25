@@ -10,7 +10,7 @@ const CreateNewPass = () => {
   const navigation = useNavigation<CreateNewPassNavigationProp>();
   const route = useRoute();
   const { userId } = route.params || {}; // Get the userId passed from the RecoverPassOtp screen
-  const BASE_URL = "http://localhost:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "http://192.168.10.3:3000"; // Replace 3000 with your server's port
 
 
   const [newPassword, setNewPassword] = useState('');

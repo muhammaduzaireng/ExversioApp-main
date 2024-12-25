@@ -14,13 +14,13 @@ app.use(bodyParser.json()); // Enable body-parser to handle JSON requests
 
 // MySQL Connection
 // const db = mysql.createConnection({
-//   host: 'localhost',
+//   host: '192.168.10.3',
 //   user: 'root',
 //   password: '1234',
 //   database: 'project_db',
 // });
 const db = mysql.createPool({
-  host: "localhost",
+  host: "192.168.10.3",
   user: "root",
   password: "1234", // Replace with your database password
   database: "project_db", // Replace with your database name
@@ -1050,5 +1050,5 @@ app.get("/albums", async (req, res) => {
 
 // Start the server on port 3001
 app.listen(3000,"0.0.0.0", () => {
-  console.log("Server is running on http://localhost:3000");
+  console.log("Server is running on http://192.168.10.3:3000");
 });

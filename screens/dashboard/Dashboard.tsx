@@ -6,7 +6,7 @@ import artistPostStyles from '../../styles/artist/artistPostStyles';
 import NavigationBar from '../components/NavigationBar';
 
 const DashboardScreen = ({ navigation }) => {
-    const BASE_URL = "http://localhost:3000"; // Replace 3000 with your server's port
+    const BASE_URL = "http://192.168.10.3:3000"; // Replace 3000 with your server's port
 
     const [posts, setPosts] = useState([]);
     const [savedUserId, setSavedUserId] = useState(null);
@@ -32,9 +32,21 @@ const DashboardScreen = ({ navigation }) => {
     // Fetch feed for subscribed artists
     const fetchFeed = async (userId) => {
         try {
+            console.log('Fetching feed for userId:', userId);
             const response = await fetch(`${BASE_URL}/get-feed?userId=${userId}`);
             const data = await response.json();
+    
             if (data.success && Array.isArray(data.posts)) {
+                console.log('Fetched posts:', data.posts);
+    
+                // Log the artist profile picture URLs for each post
+                data.posts.forEach((post, index) => {
+                    console.log(`Post ${index + 1}:`, {
+                        artistName: post.artist_name,
+                        profilePicture: post.artist_profile_picture,
+                    });
+                });
+    
                 setPosts(data.posts);
             } else {
                 console.warn('Unexpected data format:', data);
@@ -45,6 +57,7 @@ const DashboardScreen = ({ navigation }) => {
             Alert.alert('Error', 'Failed to fetch feed.');
         }
     };
+    
 
     const handleLike = async (postId) => {
         if (!savedUserId) {
@@ -108,97 +121,114 @@ const DashboardScreen = ({ navigation }) => {
         }
     };
 
-    const renderPost = ({ item }) => (
-        <View style={dashboardStyles.postContainer}>
-            {/* Post Header */}
-            <View style={dashboardStyles.postHeader}>
-                <Image source={require('../../assets/profile/profile-image.jpg')} style={dashboardStyles.avatar} />
-                <View style={dashboardStyles.userInfo}>
-                    <View style={dashboardStyles.userRow}>
-                        <Text
-                            style={dashboardStyles.username}
-                            onPress={() => navigation.navigate('ArtistProfileScreen', { artistId: item.artist_id })}
-                        >
-                            {item.artist_name || 'Unknown Artist'}
-                        </Text>
-                        <Image
-                            source={require('../../assets/icons/icons8-blue-tick.png')}
-                            style={dashboardStyles.verifiedIcon}
-                        />
+    const renderPost = ({ item }) => {
+        console.log('Rendering post:', {
+            artistName: item.artist_name,
+            profilePicture: item.artist_profile_picture,
+            postContent: item.content,
+        });
+    
+        return (
+            <View style={dashboardStyles.postContainer}>
+                {/* Post Header */}
+                <View style={dashboardStyles.postHeader}>
+                    {/* Display artist profile picture */}
+                    <Image
+                        source={
+                            item.artist_profile_picture
+                                ? { uri: item.artist_profile_picture } // Use artist's profile picture URL
+                                : require('../../assets/profile/profile-image.jpg') // Fallback to default image
+                        }
+                        style={dashboardStyles.avatar}
+                    />
+                    <View style={dashboardStyles.userInfo}>
+                        <View style={dashboardStyles.userRow}>
+                            <Text
+                                style={dashboardStyles.username}
+                                onPress={() => navigation.navigate('ArtistProfileScreen', { artistId: item.artist_id })}
+                            >
+                                {item.artist_name || 'Unknown Artist'}
+                            </Text>
+                            <Image
+                                source={require('../../assets/icons/icons8-blue-tick.png')}
+                                style={dashboardStyles.verifiedIcon}
+                            />
+                        </View>
+                        <Text style={dashboardStyles.timestamp}>{new Date(item.created_at).toLocaleString()}</Text>
                     </View>
-                    <Text style={dashboardStyles.timestamp}>{new Date(item.created_at).toLocaleString()}</Text>
                 </View>
-            </View>
-
-            {/* Post Content */}
-            <Text style={dashboardStyles.postText}>{item.content}</Text>
-
-            {/* Media Display */}
-            {item.media_url && item.media_type === 'image' && (
-                <Image source={{ uri: item.media_url }} style={artistPostStyles.postMedia} />
-            )}
-            {item.media_url && item.media_type === 'audio' && (
-                <View style={artistPostStyles.audioContainer}>
-                    <Text>Audio file: {item.media_url}</Text>
-                </View>
-            )}
-
-            {/* Actions: Likes and Comments */}
-            <View style={dashboardStyles.postActions}>
-                <Text style={dashboardStyles.likeCount}>{item.like_count || 0}</Text>
-                <TouchableOpacity onPress={() => handleLike(item.id)}>
-                    <Image
-                        source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
-                        style={[
-                            dashboardStyles.actionIconLike,
-                            { tintColor: item.isLiked ? 'red' : 'white' },
-                        ]}
-                    />
-                </TouchableOpacity>
-                <Text style={dashboardStyles.commentCount}>
-                    {Array.isArray(item.comments) ? item.comments.length : 0}
-                </Text>
-                <TouchableOpacity onPress={() => setActiveCommentPostId(item.id)}>
-                    <Image
-                        source={require('../../assets/icons/icons8-comment.png')}
-                        style={dashboardStyles.actionIconComment}
-                    />
-                </TouchableOpacity>
-            </View>
-
-            {/* Comment Input */}
-            {activeCommentPostId === item.id && (
-                <View style={dashboardStyles.commentInputContainer}>
-                    <TextInput
-                        style={dashboardStyles.commentInput}
-                        placeholder="Write a comment..."
-                        placeholderTextColor="#888"
-                        value={newCommentText}
-                        onChangeText={setNewCommentText}
-                    />
-                    <TouchableOpacity onPress={() => handleComment(item.id, newCommentText)}>
-                        <Text style={dashboardStyles.commentSubmitButton}>Submit</Text>
+    
+                {/* Post Content */}
+                <Text style={dashboardStyles.postText}>{item.content}</Text>
+    
+                {/* Media Display */}
+                {item.media_url && item.media_type === 'image' && (
+                    <Image source={{ uri: item.media_url }} style={artistPostStyles.postMedia} />
+                )}
+                {item.media_url && item.media_type === 'audio' && (
+                    <View style={artistPostStyles.audioContainer}>
+                        <Text>Audio file: {item.media_url}</Text>
+                    </View>
+                )}
+    
+                {/* Actions: Likes and Comments */}
+                <View style={dashboardStyles.postActions}>
+                    <Text style={dashboardStyles.likeCount}>{item.like_count || 0}</Text>
+                    <TouchableOpacity onPress={() => handleLike(item.id)}>
+                        <Image
+                            source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
+                            style={[
+                                dashboardStyles.actionIconLike,
+                                { tintColor: item.isLiked ? 'red' : 'white' },
+                            ]}
+                        />
+                    </TouchableOpacity>
+                    <Text style={dashboardStyles.commentCount}>
+                        {Array.isArray(item.comments) ? item.comments.length : 0}
+                    </Text>
+                    <TouchableOpacity onPress={() => setActiveCommentPostId(item.id)}>
+                        <Image
+                            source={require('../../assets/icons/icons8-comment.png')}
+                            style={dashboardStyles.actionIconComment}
+                        />
                     </TouchableOpacity>
                 </View>
-            )}
-
-            {/* Comments Display */}
-            {Array.isArray(item.comments) && item.comments.length > 0 ? (
-                item.comments.map((comment, index) => (
-                    <View key={comment?.id || index} style={dashboardStyles.commentContainer}>
-                        <Text style={dashboardStyles.commentText}>
-                            <Text style={dashboardStyles.commentAuthor}>
-                                {`${comment?.user_name || 'Anonymous'}: `}
-                            </Text>
-                            {comment?.text || 'No comment available'}
-                        </Text>
+    
+                {/* Comment Input */}
+                {activeCommentPostId === item.id && (
+                    <View style={dashboardStyles.commentInputContainer}>
+                        <TextInput
+                            style={dashboardStyles.commentInput}
+                            placeholder="Write a comment..."
+                            placeholderTextColor="#888"
+                            value={newCommentText}
+                            onChangeText={setNewCommentText}
+                        />
+                        <TouchableOpacity onPress={() => handleComment(item.id, newCommentText)}>
+                            <Text style={dashboardStyles.commentSubmitButton}>Submit</Text>
+                        </TouchableOpacity>
                     </View>
-                ))
-            ) : (
-                <Text style={dashboardStyles.noCommentsText}>No comments yet</Text>
-            )}
-        </View>
-    );
+                )}
+    
+                {/* Comments Display */}
+                {Array.isArray(item.comments) && item.comments.length > 0 ? (
+                    item.comments.map((comment, index) => (
+                        <View key={comment?.id || index} style={dashboardStyles.commentContainer}>
+                            <Text style={dashboardStyles.commentText}>
+                                <Text style={dashboardStyles.commentAuthor}>
+                                    {`${comment?.user_name || 'Anonymous'}: `}
+                                </Text>
+                                {comment?.text || 'No comment available'}
+                            </Text>
+                        </View>
+                    ))
+                ) : (
+                    <Text style={dashboardStyles.noCommentsText}>No comments yet</Text>
+                )}
+            </View>
+        );
+    };
+    
 
     return (
         <View style={dashboardStyles.container}>

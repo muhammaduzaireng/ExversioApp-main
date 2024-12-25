@@ -1,65 +1,91 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Button, Alert, StyleSheet } from 'react-native';
 import {
   initPaymentSheet,
   presentPaymentSheet,
   isApplePaySupported,
-  createApplePayPaymentMethod,
+  confirmApplePayPayment,
 } from '@stripe/stripe-react-native';
 
-const App = () => {
+const ApplePayScreen = () => {
+  const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    // Initialize Stripe when the app loads
-    initializeStripe();
+    checkApplePaySupport();
   }, []);
 
-  const initializeStripe = async () => {
-    const STRIPE_PUBLISHABLE_KEY = '<YOUR_STRIPE_PUBLISHABLE_KEY>'; // Replace with your Stripe publishable key
-    const STRIPE_MERCHANT_IDENTIFIER = '<YOUR_MERCHANT_ID>'; // Replace with your Apple Pay Merchant ID
-
-    await isApplePaySupported(); // Ensures Apple Pay is available on the device
-
-    try {
-      await initPaymentSheet({
-        merchantDisplayName: 'Exversio',
-        merchantCountryCode: 'US', // Your country code
-        applePay: {
-          merchantCountryCode: 'US',
-          paymentSummaryItems: [
-            {
-              label: 'Exversio',
-              amount: '10.00', // Amount to charge
-            },
-          ],
-        },
-        testEnv: true, // Use true for sandbox mode
-      });
-    } catch (error) {
-      console.error('Stripe Initialization Error:', error);
-    }
+  // Check if Apple Pay is supported on the device
+  const checkApplePaySupport = async () => {
+    const isSupported = await isApplePaySupported();
+    setIsApplePayAvailable(isSupported);
   };
 
-  const handleApplePay = async () => {
+  const initializeStripe = async () => {
     try {
-      // Create Apple Pay payment method
-      const { paymentMethod } = await createApplePayPaymentMethod({
+      setLoading(true);
+  
+      // Initialize the Payment Sheet with Apple Pay configuration
+      const { error } = await initPaymentSheet({
+        merchantDisplayName: 'Exversio', // Your app or business name
+        merchantCountryCode: 'US', // Two-letter ISO country code (e.g., 'US', 'PK')
         applePay: {
-          merchantCountryCode: 'US',
           paymentSummaryItems: [
             {
-              label: 'Exversio',
-              amount: '10.00',
+              label: 'Exversio', // Display label in Apple Pay
+              amount: '10.00', // Payment amount
             },
           ],
         },
+        testEnv: true, // Use sandbox for testing
       });
+  
+      if (error) {
+        console.error('Stripe Initialization Error:', error);
+        Alert.alert('Initialization Failed', error.localizedMessage || 'An error occurred.');
+      } else {
+        Alert.alert('Stripe Initialized', 'You can now use Apple Pay.');
+      }
+    } catch (error) {
+      console.error('Stripe Initialization Error:', error);
+      Alert.alert('Initialization Failed', 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+  
 
-      console.log('Apple Pay Payment Method:', paymentMethod);
+  const handleApplePay = async () => {
+    if (!isApplePayAvailable) {
+      Alert.alert('Error', 'Apple Pay is not available on this device.');
+      return;
+    }
 
-      Alert.alert('Payment Success', 'Your payment was successfully processed!');
+    try {
+      setLoading(true);
+      const { error, paymentIntent } = await presentPaymentSheet();
+
+      if (error) {
+        console.error('Apple Pay Error:', error);
+        Alert.alert('Payment Failed', 'Something went wrong while processing payment.');
+      } else {
+        // Confirm Apple Pay Payment
+        const confirmError = await confirmApplePayPayment(paymentIntent);
+
+        if (confirmError) {
+          console.error('Payment Confirmation Error:', confirmError);
+          Alert.alert('Payment Failed', 'Something went wrong during payment confirmation.');
+        } else {
+          Alert.alert('Payment Success', 'Your payment was successfully processed!');
+        }
+      }
     } catch (error) {
       console.error('Apple Pay Error:', error);
-      Alert.alert('Payment Failed', 'Something went wrong while processing the payment.');
+      Alert.alert('Payment Failed', 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,9 +93,14 @@ const App = () => {
     <View style={styles.container}>
       <Text style={styles.header}>Exversio App</Text>
       <Text style={styles.description}>
-        Test Apple Pay integration by clicking the button below:
+        Click the button below to test Apple Pay integration:
       </Text>
-      <Button title="Pay with Apple Pay" onPress={handleApplePay} />
+      <Button title="Initialize Apple Pay" onPress={initializeStripe} disabled={loading} />
+      <Button
+        title="Pay with Apple Pay"
+        onPress={handleApplePay}
+        disabled={!isApplePayAvailable || loading}
+      />
     </View>
   );
 };
@@ -96,4 +127,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default ApplePayScreen;

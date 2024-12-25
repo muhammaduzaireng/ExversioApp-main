@@ -1,40 +1,39 @@
-// styles/dashboardStyles.ts
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 
 const dashboardStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1E1E1E',
-    paddingTop: 20,
+    paddingTop: height * 0.04, // 2% of screen height
   },
   logo: {
-    width: 36,
-    height: 47.03,
+    width: width * 0.1, // 10% of screen width
+    height: height * 0.06, // 6% of screen height
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
   },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
   },
   tabButton: {
     backgroundColor: '#333',
-    width: 70,  // Set the width to 70
-    height: 30,  // Set the height to 30
+    width: width * 0.2, // 20% of screen width
+    height: height * 0.05, // 5% of screen height
     justifyContent: 'center', // Center the text vertically
     alignItems: 'center',  // Center the text horizontally
-    borderRadius: 15,  // Adjust the borderRadius to half of the height for a rounded look
-   
+    borderRadius: height * 0.025,  // Adjust the borderRadius to half of the height for a rounded look
   },
   tabButtonActive: {
     backgroundColor: '#2ef3dd',
-    width: 70,  // Set the width to 70
-    height: 30,  // Set the height to 30
+    width: width * 0.2, // 20% of screen width
+    height: height * 0.05, // 5% of screen height
     justifyContent: 'center', // Center the text vertically
     alignItems: 'center',  // Center the text horizontally
-    borderRadius: 15,  // Adjust the borderRadius to half of the height for a rounded look
-   
+    borderRadius: height * 0.025,  // Adjust the borderRadius to half of the height for a rounded look
   },
   tabButtonText: {
     color: '#fff',
@@ -188,11 +187,16 @@ commentText: {
     marginRight: 10,
   },
   footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
+    paddingVertical: 20,
     borderTopWidth: 1,
     borderTopColor: '#333',
+    backgroundColor: '#1E1E1E', // Ensure the footer has a background color
   },
   footerButton: {
     alignItems: 'center',

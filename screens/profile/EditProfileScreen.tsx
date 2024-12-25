@@ -1,143 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
-import * as ImagePicker from 'react-native-image-picker'; // For selecting profile picture
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'react-native-image-picker';
+import RNFetchBlob from 'rn-fetch-blob';
 import commonStyles from '../../styles/commonStyles'; // Ensure this path is correct
+import RNFS from 'react-native-fs';
 
 type EditProfileScreenNavigationProp = StackNavigationProp<any, 'EditProfile'>;
 
 const EditProfileScreen = () => {
   const navigation = useNavigation<EditProfileScreenNavigationProp>();
-  const BASE_URL = "http://localhost:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "http://192.168.10.3:3000"; // Replace with your server's base URL
 
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');
   const [bio, setBio] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null); // To store image details for server upload
+
 
   useEffect(() => {
     // Load current profile data when the screen is loaded
     const loadProfileData = async () => {
       try {
         const userId = await AsyncStorage.getItem('userId');
+        console.log('Loaded userId from AsyncStorage:', userId);
         if (userId) {
-          // Fetch the current user profile data from the server
-          fetch(`${BASE_URL}/getUserProfile?userId=${userId}`)
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                setName(data.data.name);
-                setCountry(data.data.country);
-                setBio(data.data.bio);
-                setProfilePicture(data.data.profile_picture);
-              } else {
-                Alert.alert('Error', 'Failed to load profile data');
-              }
-            })
-            .catch(error => {
-              console.error('Error fetching profile data:', error);
-              Alert.alert('Error', 'Failed to load profile data');
-            });
+          const response = await fetch(`${BASE_URL}/getUserProfile?userId=${userId}`);
+          const data = await response.json();
+          console.log('Response from getUserProfile:', data);
+  
+          if (data.success) {
+            setName(data.data.name);
+            setCountry(data.data.country);
+            setBio(data.data.bio);
+  
+            // Handle profile_picture safely
+            const profilePictureUrl =
+              data.data.profilePicture && data.data.profilePicture.startsWith('/')
+                ? `${BASE_URL}${data.data.profilePicture}` // Construct full URL for relative paths
+                : data.data.profilePicture || null; // Use the absolute URL or set to null if not available
+  
+            console.log('Resolved profile picture URL:', profilePictureUrl);
+  
+            setProfilePicture(profilePictureUrl);
+          } else {
+            Alert.alert('Error', 'Failed to load profile data');
+          }
         } else {
           Alert.alert('Error', 'No user found. Please log in again.');
           navigation.navigate('Login');
         }
       } catch (error) {
-        console.error('Error loading profile data from AsyncStorage:', error);
+        console.error('Error loading profile data:', error);
+        Alert.alert('Error', 'Failed to load profile data');
       }
     };
-
+  
     loadProfileData();
   }, []);
+  
+  
+ const handleProfilePictureUpload = async () => {
+  const result = await ImagePicker.launchImageLibrary({
+    mediaType: 'photo',
+  });
 
-//   const handleProfilePictureUpload = () => {
-//     // Open image picker for selecting profile picture
-//     ImagePicker.launchImageLibrary({}, (response) => {
-//       if (response.didCancel) {
-//         console.log('User cancelled image picker');
-//       } else if (response.error) {
-//         console.error('ImagePicker Error: ', response.error);
-//       } else if (response.assets && response.assets.length > 0) {
-//         const selectedImage = response.assets[0].uri;
-//         console.log('Selected image: ', selectedImage);
-//         setProfilePicture(selectedImage);
-//       }
-//     });
-//   };
+  if (!result.didCancel && result.assets && result.assets.length > 0) {
+    const selectedImage = result.assets[0];
+    console.log('Selected image:', selectedImage);
 
-  const handleSaveProfile = async () => {
-    try {
-        const userId = await AsyncStorage.getItem('userId'); // Fetch userId from storage
+    setProfilePicture(selectedImage.uri); // Show image preview
 
-        if (!userId) {
-            Alert.alert('Error', 'User ID is required');
-            return;
-        }
-
-        const profileData = {
-            userId,  // Include userId
-            name,
-            country,
-            bio: bio || '',  // Handle empty bio
-            profilePicture: profilePicture ? profilePicture : null  // If profile picture is present, send it
-        };
-
-        fetch(`{BASE_URL}/updateProfile`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(profileData),  // Send the profile data as JSON
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Alert.alert('Success', 'Profile updated successfully');
-                navigation.goBack();  // Go back to the previous screen
-            } else {
-                Alert.alert('Error', 'Failed to update profile');
-            }
-        })
-        .catch(error => {
-            console.error('Error updating profile:', error);
-            Alert.alert('Error', 'Failed to update profile');
-        });
-    } catch (error) {
-        console.error('Error saving profile:', error);
-        Alert.alert('Error', 'Failed to save profile');
-    }
-};
-
-const handleProfilePictureUpload = () => {
-    ImagePicker.launchImageLibrary({}, (response) => {
-        if (response.didCancel) {
-            console.log('User cancelled image picker');
-        } else if (response.error) {
-            console.error('ImagePicker Error: ', response.error);
-        } else if (response.assets && response.assets.length > 0) {
-            const selectedImage = response.assets[0].uri;
-
-            // Convert image to base64 string to send to the backend
-            RNFetchBlob.fs.readFile(selectedImage, 'base64')
-                .then((base64Data) => {
-                    setProfilePicture(`data:image/jpeg;base64,${base64Data}`);  // Save base64 image in state
-                })
-                .catch((error) => {
-                    console.error('Error converting image to base64:', error);
-                });
-        }
+    // Store the image file details for upload
+    setSelectedImage({
+      uri: selectedImage.uri,
+      name: selectedImage.fileName || `profile_${Date.now()}.jpg`,
+      type: selectedImage.type || 'image/jpeg',
     });
+  }
 };
 
+const handleSaveProfile = async () => {
+  try {
+    const userId = await AsyncStorage.getItem('userId');
+    if (!userId) {
+      Alert.alert('Error', 'User ID is required');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('userId', userId);
+    formData.append('name', name.trim());
+    formData.append('country', country);
+    formData.append('bio', bio.trim());
+
+    if (selectedImage) {
+      formData.append('profilePicture', {
+        uri: selectedImage.uri,
+        name: selectedImage.name,
+        type: selectedImage.type,
+      });
+    }
+
+    const response = await fetch(`${BASE_URL}/updateProfile`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      Alert.alert('Success', 'Profile updated successfully');
+      navigation.goBack();
+    } else {
+      Alert.alert('Error', data.message || 'Failed to update profile');
+    }
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    Alert.alert('Error', 'Failed to save profile');
+  }
+};
+
+  
   
   
 
   return (
     <View style={commonStyles.container}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={commonStyles.backButtonContainer}>
-        <Image source={require('../../assets/icons/211686_back_arrow_icon.png')} style={commonStyles.backIcon} />
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={commonStyles.backButtonContainer}
+      >
+        <Image
+          source={require('../../assets/icons/211686_back_arrow_icon.png')}
+          style={commonStyles.backIcon}
+        />
       </TouchableOpacity>
 
       <View style={commonStyles.logoContainer}>
@@ -147,17 +146,22 @@ const handleProfilePictureUpload = () => {
       <View style={commonStyles.formContainer}>
         {/* Profile Picture Upload */}
         <TouchableOpacity onPress={handleProfilePictureUpload}>
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
-  <Image
-    source={
-      profilePicture
-        ? { uri: profilePicture }
-        : require('../../assets/profile/profile-image.jpg')
-    }
-    style={commonStyles.avatar}
-  />
-</View>
+          <View style={{ alignItems: 'center', marginTop: 20 }}>
+          <Image
+  source={
+    profilePicture
+      ? { uri: profilePicture }
+      : require('../../assets/profile/profile-image.jpg') // Default image
+  }
+  style={commonStyles.avatar}
+  onError={(error) => {
+    console.error('Failed to load profile picture:', error.nativeEvent.error);
+    setProfilePicture(require('../../assets/profile/profile-image.jpg')); // Fallback
+  }}
+/>
 
+
+          </View>
           <Text style={commonStyles.linkText}>Change Profile Picture</Text>
         </TouchableOpacity>
 

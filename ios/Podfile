@@ -5,7 +5,7 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, min_ios_version_supported
+platform :ios, '16.0'
 prepare_react_native_project!
 # Firebase dependencies with modular headers
 pod 'Firebase', :modular_headers => true
@@ -22,6 +22,13 @@ end
 
 target 'ExversioApp' do
   config = use_native_modules!
+  ENV['COCOAPODS_SKIP_SET_SOURCE'] = 'true'
+
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+  # Pods for ExversioApp
+  ##pod 'Stripe', '~> 23.28.0' # Replace with the latest version
 
   use_react_native!(
     :path => config[:reactNativePath],

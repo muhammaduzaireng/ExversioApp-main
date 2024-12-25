@@ -4,7 +4,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51QAsW0JWonOOC6woHSJyCjoQyWeqPdbq2m9kFupyMbIqFX7Sio94QgXkVKYmKSX7pKzA6AxkjEyoDCyBGP8lQ5en004pnQIZYQ');
+const stripe = Stripe('pk_live_51QAsW0JWonOOC6wojMwqo0uHlTfAr7dRwGKTV2rr48yy6EZniU8d3ML5IuKkihfD2ukZFX40TOUK1sRjpzDqa37d00Ncul3Dsr');
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -14,7 +14,7 @@ app.use(bodyParser.json()); // Enable body-parser to handle JSON requests
 
 // MySQL Connection
 // const db = mysql.createConnection({
-//   host: 'localhost',
+//   host: '192.168.10.3',
 //   user: 'root',
 //   password: '1234',
 //   database: 'project_db',
@@ -22,11 +22,53 @@ app.use(bodyParser.json()); // Enable body-parser to handle JSON requests
 const db = mysql.createPool({
   host: "srv1134.hstgr.io",
   user: "u518897449_exversioMusic",
-  password: "Exversio1234", // Replace with your database password
-  database: "u518897449_exversioMusic", // Replace with your database name
+  password: "Exversio1234",
+  database: "u518897449_exversioMusic",
   port: 3306,
+  connectTimeout: 10000,
+  // Enable debug mode
 });
 
+const uploadDir = path.join(__dirname, 'uploads');
+
+// Ensure upload directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for general uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  },
+});
+
+// Configure multer specifically for profile pictures
+const profilePictureStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const profilePictureDir = path.join(uploadDir, 'profile-pictures');
+    if (!fs.existsSync(profilePictureDir)) {
+      fs.mkdirSync(profilePictureDir, { recursive: true });
+    }
+    cb(null, profilePictureDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `profile_${Date.now()}_${file.originalname}`;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+const profilePictureUpload = multer({ storage: profilePictureStorage });
+
+// Serve Static Files
+app.use('/uploads', express.static(uploadDir));
+
+module.exports = { upload, profilePictureUpload };
 
 // db.connect(err => {
 //   if (err) {
@@ -141,8 +183,10 @@ app.post('/Signup', async (req, res) => {
 //       }
 //     });
 //   });
+// Get user profile
+// Get user profile
 app.get('/getUserProfile', async (req, res) => {
-  const userId = req.query.userId; // Get user ID from query params
+  const userId = req.query.userId;
 
   if (!userId) {
     return res.status(400).json({ success: false, message: 'User ID is required' });
@@ -159,53 +203,121 @@ app.get('/getUserProfile', async (req, res) => {
     const [result] = await db.query(query, [userId]);
 
     if (result.length > 0) {
-      return res.status(200).json({ success: true, data: result[0] });
+      const profileData = {
+        name: result[0].name || '',
+        email: result[0].email || '',
+        bio: result[0].bio || '',
+        country: result[0].country || '',
+        profilePicture: result[0].profile_picture || '/uploads/default.jpg', // Default profile picture
+      };
+      return res.status(200).json({ success: true, data: profileData });
     } else {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
   } catch (err) {
-    console.error('Error fetching user profile:', err);
-    return res.status(500).json({ success: false, message: 'Failed to fetch user profile' });
+    console.error('Error fetching user profile:', err.message, err.stack);
+    return res.status(500).json({ success: false, message: 'Failed to fetch user profile.' });
   }
 });
 
-  
+// Update User Profile
+app.post('/updateProfile', upload.single('profilePicture'), async (req, res) => {
+  try {
+    console.log('Received profile update request:', req.body);
+    console.log('Uploaded profile picture details:', req.file);
 
-  // Update user profile (name, email, bio, profile picture, etc.)
-  app.post('/updateProfile', (req, res) => {
-    const { userId, name, bio, country } = req.body;  // Retrieve userId, name, bio, and country from body
+    const { userId, name, bio, country } = req.body;
+    const profilePicture = req.file ? `/uploads/${req.file.filename}` : null;
 
-    if (!userId) {
-        return res.status(400).json({ success: false, message: 'User ID is required' });
+    if (!userId || !name) {
+      console.error('Error: User ID and Name are required');
+      return res.status(400).json({ success: false, message: 'User ID and Name are required' });
     }
 
-    // First, update the user's name in the users table
+    // Update users table
     const updateUserQuery = 'UPDATE users SET name = ? WHERE id = ?';
-    db.query(updateUserQuery, [name, userId], (err, result) => {
-        if (err) {
-            console.error('Error updating user name:', err);
-            return res.status(500).json({ success: false, message: 'Failed to update user name' });
-        }
+    console.log('Executing query (updateUserQuery):', updateUserQuery, [name, userId]);
 
-        // Now update bio and country in the profile table or insert a new row if it doesn't exist
-        const updateProfileQuery = `
-            INSERT INTO profile (user_id, bio, country)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE 
-                bio = VALUES(bio),
-                country = VALUES(country),
-                updated_at = NOW()
-        `;
+    console.time('updateUserQuery');
+    const [updateUserResult] = await db.query(updateUserQuery, [name, userId]);
+    console.timeEnd('updateUserQuery');
 
-        db.query(updateProfileQuery, [userId, bio, country], (err, result) => {
-            if (err) {
-                console.error('Error updating profile:', err);
-                return res.status(500).json({ success: false, message: 'Failed to update profile' });
-            }
-            return res.status(200).json({ success: true, message: 'Profile updated successfully' });
-        });
-    });
+    console.log('updateUserQuery result:', updateUserResult);
+    if (updateUserResult.affectedRows === 0) {
+      console.warn('No rows updated in users table. Verify userId exists.');
+      return res.status(400).json({ success: false, message: 'No updates were made to the users table.' });
+    }
+
+    // Update or insert into profile table
+    const updateProfileQuery = `
+      INSERT INTO profile (user_id, bio, country, profile_picture)
+      VALUES (?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        bio = VALUES(bio),
+        country = VALUES(country),
+        profile_picture = COALESCE(VALUES(profile_picture), profile_picture),
+        updated_at = NOW()
+    `;
+    console.log('Executing query (updateProfileQuery):', updateProfileQuery, [userId, bio, country, profilePicture]);
+
+    console.time('updateProfileQuery');
+    const [updateProfileResult] = await db.query(updateProfileQuery, [userId, bio, country, profilePicture]);
+    console.timeEnd('updateProfileQuery');
+
+    console.log('updateProfileQuery result:', updateProfileResult);
+
+    return res.status(200).json({ success: true, message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error in /updateProfile:', error.message, error.stack);
+    return res.status(500).json({ success: false, message: 'An error occurred while updating the profile.' });
+  }
 });
+
+app.post('/updateProfilePicture', upload.single('profilePicture'), async (req, res) => {
+  try {
+    console.log('Received profile picture update request:', req.body);
+    console.log('Uploaded profile picture details:', req.file);
+
+    const { userId } = req.body;
+    const profilePicture = req.file ? `/uploads/${req.file.filename}` : null;
+
+    if (!userId || !profilePicture) {
+      console.error('Error: User ID and Profile Picture are required');
+      return res.status(400).json({ success: false, message: 'User ID and Profile Picture are required' });
+    }
+
+    const updateProfilePictureQuery = `
+      UPDATE profile
+      SET profile_picture = ?
+      WHERE user_id = ?
+    `;
+    console.log('Executing query (updateProfilePictureQuery):', updateProfilePictureQuery, [profilePicture, userId]);
+
+    const [updateResult] = await db.query(updateProfilePictureQuery, [profilePicture, userId]);
+
+    console.log('updateProfilePictureQuery result:', updateResult);
+
+    if (updateResult.affectedRows === 0) {
+      console.warn('No rows updated in profile table. Verify userId exists.');
+      return res.status(400).json({ success: false, message: 'Failed to update profile picture. User may not exist.' });
+    }
+
+    return res.status(200).json({ success: true, updatedProfilePicture: profilePicture });
+  } catch (error) {
+    console.error('Error in /updateProfilePicture:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to update profile picture.' });
+  }
+});
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -333,6 +445,64 @@ app.post('/login', async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   });
+
+  //apple payments 
+  app.post('/create-apple-pay-session', async (req, res) => {
+    try {
+      const { amount } = req.body;
+  
+      // Validate the amount
+      if (!amount || typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount' });
+      }
+  
+      // Create a PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount, // Amount in cents
+        currency: 'usd',
+        payment_method_types: ['card'], // Includes Apple Pay as part of 'card'
+      });
+  
+      // Return the client secret
+      res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+      console.error('Error creating PaymentIntent:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+
+  app.post('/payment-sheet', async (req, res) => {
+    // Use an existing Customer ID if this is a returning customer.
+    const customer = await stripe.customers.create();
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      {customer: customer.id},
+      {apiVersion: '2024-09-30.acacia'}
+    );
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 1099,
+      currency: 'eur',
+      customer: customer.id,
+      // In the latest version of the API, specifying the `automatic_payment_methods` parameter
+      // is optional because Stripe enables its functionality by default.
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+  
+    res.json({
+      paymentIntent: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: customer.id,
+      publishableKey: 'pk_live_51QAsW0JWonOOC6wojMwqo0uHlTfAr7dRwGKTV2rr48yy6EZniU8d3ML5IuKkihfD2ukZFX40TOUK1sRjpzDqa37d00Ncul3Dsr'
+    });
+  });
+  
+  
+  
+  
+  
+  
 //become Artist
   
 // Make sure to use the defined 'connection' object in this route
@@ -457,7 +627,14 @@ app.get('/get-artist-id', async (req, res) => {
 
 
 app.get('/approved-artists', async (req, res) => {
-  const query = 'SELECT artist_id AS id, name, user_id FROM approved_artists';
+  const query = `
+    SELECT 
+      approved_artists.artist_id AS id, 
+      approved_artists.name, 
+      approved_artists.user_id,
+      (SELECT profile_picture FROM profile WHERE profile.user_id = approved_artists.user_id LIMIT 1) AS profile_picture
+    FROM approved_artists
+  `;
 
   try {
     // Execute the query using async/await
@@ -470,6 +647,8 @@ app.get('/approved-artists', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch artists' });
   }
 });
+
+
 
 
 // Endpoint to get posts for a specific artist
@@ -903,33 +1082,39 @@ app.get('/get-feed', async (req, res) => {
 
   const query = `
     SELECT 
-        posts.*, 
-        approved_artists.name AS artist_name,
-        (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
-        EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) AS isLiked,
-        COALESCE(
-            JSON_ARRAYAGG(
-                CASE 
-                    WHEN comments.id IS NOT NULL THEN 
-                        JSON_OBJECT(
-                            'id', comments.id, 
-                            'text', comments.comment_text,
-                            'user_id', comments.user_id,
-                            'user_name', users.name,
-                            'created_at', comments.created_at
-                        )
-                    ELSE NULL
-                END
-            ), '[]'
-        ) AS comments
-    FROM posts
-    LEFT JOIN subscriptions ON posts.artist_id = subscriptions.artist_id
-    LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
-    LEFT JOIN comments ON posts.id = comments.post_id
-    LEFT JOIN users ON comments.user_id = users.id
-    WHERE subscriptions.user_id = ?
-    GROUP BY posts.id
-    ORDER BY posts.created_at DESC;
+    posts.*, 
+    approved_artists.name AS artist_name,
+    -- Fetch profile picture with a condition on user_id dynamically
+    (SELECT profile_picture 
+     FROM profile 
+     WHERE profile.user_id = approved_artists.user_id 
+     LIMIT 1) AS artist_profile_picture,
+    (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
+    EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) AS isLiked,
+    COALESCE(
+        JSON_ARRAYAGG(
+            CASE 
+                WHEN comments.id IS NOT NULL THEN 
+                    JSON_OBJECT(
+                        'id', comments.id, 
+                        'text', comments.comment_text,
+                        'user_id', comments.user_id,
+                        'user_name', users.name,
+                        'created_at', comments.created_at
+                    )
+                ELSE NULL
+            END
+        ), '[]'
+    ) AS comments
+FROM posts
+LEFT JOIN subscriptions ON posts.artist_id = subscriptions.artist_id
+LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
+LEFT JOIN comments ON posts.id = comments.post_id
+LEFT JOIN users ON comments.user_id = users.id
+WHERE subscriptions.user_id = ?
+GROUP BY posts.id
+ORDER BY posts.created_at DESC;
+
   `;
 
   try {
@@ -952,7 +1137,8 @@ app.get('/get-feed', async (req, res) => {
         isLiked: post.isLiked === 1, // Convert to boolean
         comments: parsedComments, // Use filtered comments
         comment_count: parsedComments.length, // Use the actual length of parsed comments
-        like_count: post.like_count || 0 // Ensure like_count is a valid number
+        like_count: post.like_count || 0, // Ensure like_count is a valid number
+        artist_profile_picture: post.artist_profile_picture || null, // Include the artist's profile picture
       };
     });
 
@@ -1029,25 +1215,6 @@ app.get('/get-feed', async (req, res) => {
 
 
 // Create Upload Directory
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// Multer Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueName);
-  },
-});
-const upload = multer({ storage });
-
-// Serve Static Files
-app.use("/uploads", express.static(uploadDir));
 
 // API to Create Album
 app.post("/create-album", upload.single("cover"), async (req, res) => {
@@ -1055,11 +1222,8 @@ app.post("/create-album", upload.single("cover"), async (req, res) => {
   console.log("Got request to create album");
 
   const { title, artist_id } = req.body; // Include artist_id from the request body
-  const coverUrl = req.file
-    ? `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`
-    : null;
+  const coverUrl = req.file ? `/uploads/${req.file.filename}` : null; // Use relative path
 
-  // Validate required fields
   if (!title) {
     return res.status(400).json({ message: "Album title is required." });
   }
@@ -1070,7 +1234,7 @@ app.post("/create-album", upload.single("cover"), async (req, res) => {
 
   try {
     const query = "INSERT INTO albums (title, cover_url, artist_id) VALUES (?, ?, ?)";
-    const [result] = await db.execute(query, [title, coverUrl, artist_id]); // Include artist_id in the query
+    const [result] = await db.execute(query, [title, coverUrl, artist_id]);
 
     res.status(201).json({
       message: "Album created successfully",
@@ -1087,28 +1251,22 @@ app.post("/create-album", upload.single("cover"), async (req, res) => {
 app.post("/add-music", upload.fields([{ name: "file" }, { name: "cover" }]), async (req, res) => {
   console.log("Add Music is Called!");
 
-  const { album_id, title, type, artist_id } = req.body; // Include artist_id from the request body
+  const { album_id, title, type, artist_id } = req.body;
   const file = req.files["file"]?.[0];
   const cover = req.files["cover"]?.[0];
 
-  // Validate required fields
   if (!album_id || !title || !file || !artist_id) {
     return res.status(400).json({ message: "Album ID, title, music file, and artist ID are required." });
   }
 
-  // Construct URLs for the file and cover
-  const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${file.filename}`;
-  const coverUrl = cover
-    ? `${req.protocol}://${req.get("host")}/uploads/${cover.filename}`
-    : null;
+  const fileUrl = `/uploads/${file.filename}`; // Use relative path
+  const coverUrl = cover ? `/uploads/${cover.filename}` : null;
 
   try {
     const query = `
       INSERT INTO albummusic (album_id, title, type, file_url, cover_url, artist_id)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
-
-    // Execute the query with artist_id included
     await db.execute(query, [album_id, title, type, fileUrl, coverUrl, artist_id]);
 
     res.status(201).json({ message: "Music added to album successfully" });
@@ -1117,6 +1275,7 @@ app.post("/add-music", upload.fields([{ name: "file" }, { name: "cover" }]), asy
     res.status(500).json({ message: "Failed to add music to album" });
   }
 });
+
 
 
 // API to Fetch Albums with Their Music
@@ -1137,22 +1296,24 @@ app.get("/albums", async (req, res) => {
           music_id: item.music_id,
           title: item.music_title,
           type: item.type,
-          file_url: item.file_url,
-          cover: item.music_cover,
+          file_url: `${req.protocol}://${req.get("host")}${item.file_url}`, // Dynamically add base URL
+          cover: item.music_cover ? `${req.protocol}://${req.get("host")}${item.music_cover}` : null,
         });
       } else {
         acc.push({
           album_id: item.album_id,
           title: item.album_title,
-          cover: item.album_cover,
+          cover: item.album_cover ? `${req.protocol}://${req.get("host")}${item.album_cover}` : null,
           tracks: item.music_id
             ? [
                 {
                   music_id: item.music_id,
                   title: item.music_title,
                   type: item.type,
-                  file_url: item.file_url,
-                  cover: item.music_cover,
+                  file_url: `${req.protocol}://${req.get("host")}${item.file_url}`,
+                  cover: item.music_cover
+                    ? `${req.protocol}://${req.get("host")}${item.music_cover}`
+                    : null,
                 },
               ]
             : [],
@@ -1167,6 +1328,7 @@ app.get("/albums", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch albums" });
   }
 });
+
 // Route to fetch albums and their music by artist_id
 app.get("/get-artist-albums", async (req, res) => {
   const { artist_id } = req.query;
@@ -1345,5 +1507,5 @@ app.post('/process-payment', async (req, res) => {
 
 // Start the server on port 3001
 app.listen(3000,"0.0.0.0", () => {
-  console.log("Server is running on http://localhost:3000");
+  console.log("Server is running on http://192.168.10.3:3000");
 });

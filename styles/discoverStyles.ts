@@ -1,5 +1,6 @@
-// styles/discoverStyles.ts
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 
 const discoverStyles = StyleSheet.create({
   container: {
@@ -7,37 +8,36 @@ const discoverStyles = StyleSheet.create({
     backgroundColor: '#1E1E1E',
   },
   contentContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: width * 0.05, // 5% of screen width
+    paddingTop: height * 0.04, // 1% of screen height
   },
   searchContainer: {
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
   },
   searchLabel: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: width * 0.04, // 4% of screen width
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: height * 0.01, // 1% of screen height
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 10,
+    borderRadius: width * 0.025, // 2.5% of screen width
+    paddingHorizontal: width * 0.025, // 2.5% of screen width
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: height * 0.01, // 1% of screen height
     color: '#000',
   },
   searchIconContainer: {
-    padding: 5,
+    padding: width * 0.0125, // 1.25% of screen width
   },
   searchIcon: {
-    width: 20,
-    height: 20,
-    tintColor: '#000',
+    width: width * 0.06, // 6% of screen width
+    height: height * 0.03, // 3% of screen height
   },
   sectionTitle: {
     color: '#fff',

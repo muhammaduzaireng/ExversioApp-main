@@ -1,104 +1,23 @@
-// import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from "react-native";
 
-// const libraryStyles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#1E1E1E',
-//     justifyContent: 'space-between',
-//   },
-//   header: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     paddingHorizontal: 20,
-//     paddingTop: 20,
-//   },
-//   title: {
-//     fontSize: 24,
-//     color: '#fff',
-//     fontWeight: 'bold',
-//   },
-//   headerIcons: {
-//     flexDirection: 'row',
-//   },
-//   headerIcon: {
-//     width: 24,
-//     height: 24,
-//     tintColor: '#fff',
-//     marginLeft: 15,
-//   },
-//   playlistContainer: {
-//     paddingHorizontal: 20,
-//     paddingTop: 20,
-//   },
-//   playlistItem: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 20,
-//   },
-//   playlistImage: {
-//     width: 50,
-//     height: 50,
-//     borderRadius: 25,
-//     marginRight: 15,
-//   },
-//   playlistInfo: {
-//     flex: 1,
-//   },
-//   playlistName: {
-//     fontSize: 18,
-//     color: '#fff',
-//     fontWeight: 'bold',
-//   },
-//   playlistDate: {
-//     fontSize: 14,
-//     color: '#aaa',
-//     marginTop: 5,
-//   },
-//   createPlaylistItem: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginTop: 20,
-//   },
-//   createPlaylistButton: {
-//     width: 50,
-//     height: 50,
-//     borderRadius: 25,
-//     backgroundColor: '#333',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginRight: 15,
-//   },
-//   createPlaylistIcon: {
-//     width: 24,
-//     height: 24,
-//     tintColor: '#fff',
-//   },
-//   createPlaylistText: {
-//     fontSize: 18,
-//     color: '#fff',
-//   },
-
-  
-// });
-
-// export default libraryStyles;
-import { StyleSheet } from "react-native";
+const { width, height } = Dimensions.get("window");
 
 const libraryStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1a1a1a",
-    padding: 20,
+    padding: width * 0.05, // 5% of screen width
+    height: height * 0.04,
+    
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
   },
   title: {
-    fontSize: 24,
+    fontSize: width * 0.06, // 6% of screen width
     fontWeight: "bold",
     color: "#fff",
   },
@@ -106,13 +25,13 @@ const libraryStyles = StyleSheet.create({
     flexDirection: "row",
   },
   headerIcon: {
-    width: 24,
-    height: 24,
-    marginLeft: 20,
+    width: width * 0.06, // 6% of screen width
+    height: width * 0.06, // 6% of screen width (keeping it square)
+    marginLeft: width * 0.05, // 5% of screen width
     tintColor: "#fff",
   },
   playlistContainer: {
-    paddingBottom: 20,
+    paddingBottom: height * 0.02, // 2% of screen height
   },
   playlistItem: {
     flexDirection: "row",
@@ -120,25 +39,25 @@ const libraryStyles = StyleSheet.create({
     backgroundColor: "#2a2a2a",
     borderRadius: 10,
     padding: 10,
-    marginBottom: 15,
+    marginBottom: height * 0.02, // 2% of screen height
   },
   playlistImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 5,
-    marginRight: 15,
+    width: width * 0.15, // 15% of screen width
+    height: width * 0.15, // 15% of screen width (keeping it square)
+    borderRadius: width * 0.075, // 7.5% of screen width (half of the width for a circular image)
+    marginRight: width * 0.05, // 5% of screen width
   },
   playlistInfo: {
     flex: 1,
   },
   playlistName: {
-    fontSize: 18,
+    fontSize: width * 0.045, // 4.5% of screen width
     fontWeight: "bold",
     color: "#fff",
   },
   playlistDate: {
-    fontSize: 14,
-    color: "#888",
+    fontSize: width * 0.035, // 3.5% of screen width
+    color: "#aaa",
   },
   createPlaylistItem: {
     alignItems: "center",

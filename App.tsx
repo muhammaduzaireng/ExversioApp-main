@@ -126,7 +126,9 @@ import Player from './screens/components/Player';
 const App = () => {
   return (
     <PlayerProvider>
-    <StripeProvider publishableKey="pk_live_51QAsW0JWonOOC6wojMwqo0uHlTfAr7dRwGKTV2rr48yy6EZniU8d3ML5IuKkihfD2ukZFX40TOUK1sRjpzDqa37d00Ncul3Dsr">
+    <StripeProvider 
+    publishableKey="pk_live_51QAsW0JWonOOC6wojMwqo0uHlTfAr7dRwGKTV2rr48yy6EZniU8d3ML5IuKkihfD2ukZFX40TOUK1sRjpzDqa37d00Ncul3Dsr"
+    merchantIdentifier="merchant.exversioapp.com">
       <MainStackNavigator />
     </StripeProvider>
     </PlayerProvider>
@@ -148,7 +150,7 @@ export default App;
 
 //   const registerUser = async (userData) => {
 //     try {
-//       const response = await axios.post('http://localhost:5000/api/users/register', userData);
+//       const response = await axios.post('http://192.168.10.3:5000/api/users/register', userData);
 //       console.log(response.data);
 //     } catch (error) {
 //       console.error('Error registering user:', error);

@@ -17,7 +17,7 @@ import { usePlayer } from "../components/PlayerContext";
 
 const LibraryScreen = () => {
   const { playMusic, pauseMusic, currentMusic, isPlaying } = usePlayer();
-  const BASE_URL = "http://localhost:3000";
+  const BASE_URL = "http://192.168.10.3:3000";
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [playlistMusic, setPlaylistMusic] = useState([]);

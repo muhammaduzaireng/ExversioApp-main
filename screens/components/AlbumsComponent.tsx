@@ -30,7 +30,7 @@ type Music = {
 };
 
 const AlbumsComponent = ({ artistId }: AlbumsComponentProps) => {
-  const BASE_URL = "http://localhost:3000"; // Replace with your server's URL
+  const BASE_URL = "http://192.168.10.3:3000"; // Replace with your server's URL
   const [albums, setAlbums] = useState<Album[]>([]);
   const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);

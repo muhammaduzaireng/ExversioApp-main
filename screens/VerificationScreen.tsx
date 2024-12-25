@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import commonStyles from '../styles/commonStyles';
 
 const VerificationScreen = ({ route }) => {
-  const BASE_URL = "http://localhost:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "http://192.168.10.3:3000"; // Replace 3000 with your server's port
 
   const [otp, setOtp] = useState('');
   const navigation = useNavigation();
