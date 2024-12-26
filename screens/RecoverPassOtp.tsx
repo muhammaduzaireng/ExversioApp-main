@@ -8,7 +8,7 @@ type RecoverPassOtpNavigationProp = StackNavigationProp<any, 'RecoverPassOtp'>;
 
 const RecoverPassOtp = () => {
   const navigation = useNavigation<RecoverPassOtpNavigationProp>();
-  const BASE_URL = "http://192.168.10.3:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "http://145.223.100.9:3000"; // Replace 3000 with your server's port
 
   const route = useRoute();
   const { userId } = route.params || {}; // Get the userId passed from the RecoverPasswordScreen

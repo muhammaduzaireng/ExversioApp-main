@@ -150,7 +150,7 @@ export default App;
 
 //   const registerUser = async (userData) => {
 //     try {
-//       const response = await axios.post('http://192.168.10.3:5000/api/users/register', userData);
+//       const response = await axios.post('http://145.223.100.9:5000/api/users/register', userData);
 //       console.log(response.data);
 //     } catch (error) {
 //       console.error('Error registering user:', error);

@@ -15,7 +15,7 @@ type PaymentScreenNavigationProp = StackNavigationProp<any, 'PaymentScreen'>;
 
 const PaymentScreen = () => {
   const navigation = useNavigation<PaymentScreenNavigationProp>();
-  const BASE_URL = "http://192.168.10.3:3000"; // Replace with your server's address and port
+  const BASE_URL = "http://145.223.100.9:3000"; // Replace with your server's address and port
 
   const [checkoutUrl, setCheckoutUrl] = useState(''); // URL for WebView (Stripe or Apple Pay)
   const [showWebView, setShowWebView] = useState(false);
