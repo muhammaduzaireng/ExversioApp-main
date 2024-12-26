@@ -12,7 +12,7 @@ type ProfileScreenNavigationProp = StackNavigationProp<any, 'ProfileScreen'>;
 
 const ProfileScreen = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const BASE_URL = "http://145.223.100.9:3000"; // Replace with your server's port
+  const BASE_URL = "https://www.exversio.com:3000"; // Replace with your server's port
 
   const [profileData, setProfileData] = useState({
     name: '',

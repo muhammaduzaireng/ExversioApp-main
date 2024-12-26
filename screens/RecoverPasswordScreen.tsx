@@ -8,7 +8,7 @@ type RecoverPasswordScreenNavigationProp = StackNavigationProp<any, 'RecoverPass
 
 const RecoverPasswordScreen = () => {
   const navigation = useNavigation<RecoverPasswordScreenNavigationProp>();
-  const BASE_URL = "http://145.223.100.9:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
 
   
   const [usernameOrEmail, setUsernameOrEmail] = useState(''); // State to store the username or email input

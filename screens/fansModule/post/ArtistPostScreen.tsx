@@ -9,7 +9,7 @@ import ArtistNavigationBar from '../../components/ArtistNavigationBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ArtistPostScreen = () => {
-    const BASE_URL = "http://145.223.100.9:3000"; // Replace 3000 with your server's port
+    const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
 
     const navigation = useNavigation();
     const [content, setContent] = useState('');

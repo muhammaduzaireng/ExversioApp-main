@@ -26,6 +26,22 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>145.223.100.9</key>
+			<string></string>
+			<key>NSIncludesSubdomains</key>
+			<string>true</string>
+			<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+			<string>true</string>
+		</dict>
+		<key>145.223.100.9</key>
+		<dict>
+			<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+			<string>true</string>
+			<key>NSIncludesSubdomains</key>
+			<string>true</string>
+		</dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>

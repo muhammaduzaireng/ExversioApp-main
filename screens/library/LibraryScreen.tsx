@@ -17,7 +17,7 @@ import { usePlayer } from "../components/PlayerContext";
 
 const LibraryScreen = () => {
   const { playMusic, pauseMusic, currentMusic, isPlaying } = usePlayer();
-  const BASE_URL = "http://145.223.100.9:3000";
+  const BASE_URL = "https://www.exversio.com:3000";
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [playlistMusic, setPlaylistMusic] = useState([]);
