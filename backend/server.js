@@ -1050,5 +1050,5 @@ app.get("/albums", async (req, res) => {
 
 // Start the server on port 3001
 app.listen(3000,"0.0.0.0", () => {
-  console.log("Server is running on https://www.exversio.com:3000");
+  console.log("Server is running on https://api.exversio.com:3000");
 });

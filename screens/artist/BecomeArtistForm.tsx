@@ -4,7 +4,7 @@ import formStyles from '../../styles/artist/formStyle'; // Ensure this path is c
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BecomeArtistForm = () => {
-  const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

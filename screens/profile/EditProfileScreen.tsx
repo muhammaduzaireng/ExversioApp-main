@@ -12,7 +12,7 @@ type EditProfileScreenNavigationProp = StackNavigationProp<any, 'EditProfile'>;
 
 const EditProfileScreen = () => {
   const navigation = useNavigation<EditProfileScreenNavigationProp>();
-  const BASE_URL = "https://www.exversio.com:3000"; // Replace with your server's base URL
+  const BASE_URL = "https://api.exversio.com:3000"; // Replace with your server's base URL
 
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');

@@ -8,7 +8,7 @@ type RecoverPassOtpNavigationProp = StackNavigationProp<any, 'RecoverPassOtp'>;
 
 const RecoverPassOtp = () => {
   const navigation = useNavigation<RecoverPassOtpNavigationProp>();
-  const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
 
   const route = useRoute();
   const { userId } = route.params || {}; // Get the userId passed from the RecoverPasswordScreen

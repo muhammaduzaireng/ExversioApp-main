@@ -15,7 +15,7 @@ type ArtistProfileDataNavigationProp = StackNavigationProp<any, 'ArtistProfileDa
 
 
 const ArtistProfileData = () => {
-    const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
+    const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
     const navigation = useNavigation<ArtistProfileDataNavigationProp>();
     const route = useRoute();
     const { user_id } = route.params; // Retrieve user_id from route params

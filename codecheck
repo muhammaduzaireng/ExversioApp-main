@@ -401,7 +401,7 @@ import ProgressCircle from "react-native-progress-circle";
 import Slider from "@react-native-community/slider";
 
 const MusicApp = () => {
-  const BASE_URL = "https://www.exversio.com:3000"; // Replace with your server's URL
+  const BASE_URL = "https://api.exversio.com:3000"; // Replace with your server's URL
   const [albums, setAlbums] = useState([]);
   const [isAlbumModalVisible, setIsAlbumModalVisible] = useState(false);
   const [newAlbum, setNewAlbum] = useState({ title: "", cover: null });

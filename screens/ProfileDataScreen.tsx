@@ -8,7 +8,7 @@ type ProfileDataScreenNavigationProp = StackNavigationProp<any, 'ProfileDataScre
 
 const ProfileDataScreen = () => {
   const navigation = useNavigation<ProfileDataScreenNavigationProp>();
-  const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
 
   const route = useRoute();
   const { mobileNumber } = route.params || {};

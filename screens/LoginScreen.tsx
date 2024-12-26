@@ -9,7 +9,7 @@ type LoginScreenNavigationProp = StackNavigationProp<any, 'Login'>;
 
 const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const BASE_URL = "https://www.exversio.com:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
