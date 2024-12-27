@@ -26,7 +26,7 @@ type Artist = {
 };
 
 const DiscoverScreen = () => {
-  const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
 
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [artists, setArtists] = useState<Artist[]>([]);

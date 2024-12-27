@@ -18,7 +18,7 @@
 //   const { artistId } = route.params || {}; // Retrieve artistId from navigation params
 //   console.log("Received artistId:", artistId);
 
-//   const BASE_URL = "https://api.exversio.com:3000"; // Replace with your server's URL
+//   const BASE_URL = "https://api.exversio.com"; // Replace with your server's URL
 //   const [albums, setAlbums] = useState([]);
 //   const [currentPlaying, setCurrentPlaying] = useState(null);
 //   const [isPlaying, setIsPlaying] = useState(false);
@@ -198,7 +198,7 @@ const ArtistAlbums = () => {
   const { artistId } = route.params || {};
   console.log("Received artistId:", artistId);
 
-  const BASE_URL = "https://api.exversio.com:3000";
+  const BASE_URL = "https://api.exversio.com";
   const [albums, setAlbums] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [currentPlaying, setCurrentPlaying] = useState(null);

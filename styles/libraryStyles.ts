@@ -9,6 +9,7 @@ const libraryStyles = StyleSheet.create({
     padding: width * 0.05, // 5% of screen width
     height: height * 0.04,
     
+    
   },
   header: {
     flexDirection: "row",

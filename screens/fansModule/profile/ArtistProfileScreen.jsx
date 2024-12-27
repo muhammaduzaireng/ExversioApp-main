@@ -8,7 +8,7 @@ import NavigationBar from '../../components/NavigationBar';
 import Player from '../../components/Player';
 
 const ArtistProfileScreen = () => {
-    const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
+    const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
 
 
     const [content, setContent] = useState('');

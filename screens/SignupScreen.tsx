@@ -9,7 +9,7 @@ type SignupScreenNavigationProp = StackNavigationProp<any, 'Signup'>;
 
 const SignupScreen = () => {
   const navigation = useNavigation<SignupScreenNavigationProp>();
-  const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
 
 
   // Form state

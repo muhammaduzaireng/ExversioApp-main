@@ -269,7 +269,7 @@
 // import Sound from "react-native-sound";
 
 // const AudioFileUpload = () => {
-//   const BASE_URL = "https://api.exversio.com:3000"; // Replace with your backend server URL
+//   const BASE_URL = "https://api.exversio.com"; // Replace with your backend server URL
 //   const [selectedFile, setSelectedFile] = useState(null);
 //   const [musicList, setMusicList] = useState([]); // List of available music files
 //   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -520,7 +520,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const MusicApp = () => {
-  const BASE_URL = "https://api.exversio.com:3000"; // Replace with your server's URL
+  const BASE_URL = "https://api.exversio.com"; // Replace with your server's URL
   const [albums, setAlbums] = useState([]);
   const [isAlbumModalVisible, setIsAlbumModalVisible] = useState(false);
   const [newAlbum, setNewAlbum] = useState({ title: "", cover: null });

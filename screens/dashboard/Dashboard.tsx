@@ -6,7 +6,7 @@ import artistPostStyles from '../../styles/artist/artistPostStyles';
 import NavigationBar from '../components/NavigationBar';
 
 const DashboardScreen = ({ navigation }) => {
-    const BASE_URL = "https://api.exversio.com:3000"; // Replace 3000 with your server's port
+    const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
 
     const [posts, setPosts] = useState([]);
     const [savedUserId, setSavedUserId] = useState(null);

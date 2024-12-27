@@ -11,6 +11,7 @@ const fs = require("fs");
 const app = express();
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json()); // Enable body-parser to handle JSON requests
+const https = require('https');
 
 // MySQL Connection
 // const db = mysql.createConnection({
@@ -1507,5 +1508,5 @@ app.post('/process-payment', async (req, res) => {
 
 // Start the server on port 3001
 app.listen(3000,"0.0.0.0", () => {
-  console.log("Server is running on https://api.exversio.com:3000");
+  console.log("Server is running on https://api.exversio.com");
 });
