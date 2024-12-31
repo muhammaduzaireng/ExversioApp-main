@@ -566,6 +566,24 @@ app.get('/get-artist-request', async (req, res) => {
 
 
 
+app.post('/upload-media', upload.single('file'), (req, res) => {
+  try {
+      if (!req.file) {
+          return res.status(400).json({ success: false, message: 'No file uploaded' });
+      }
+
+      // Generate the file URL
+      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${encodeURIComponent(req.file.filename)}`;
+
+      console.log('File uploaded successfully:', fileUrl);
+
+      // Return the file URL
+      res.status(200).json({ success: true, url: fileUrl });
+  } catch (error) {
+      console.error('Error during file upload:', error);
+      res.status(500).json({ success: false, message: 'Failed to upload file' });
+  }
+});
 
 // Endpoint to create a new post
 app.post('/create-post', async (req, res) => {
