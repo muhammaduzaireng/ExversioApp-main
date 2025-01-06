@@ -265,6 +265,50 @@ app.post('/verifyOTP', async (req, res) => {
     return res.status(500).json({ success: false, message: 'OTP verification failed' });
   }
 });
+app.post('/recover-password', async (req, res) => {
+  const { usernameOrEmail } = req.body;
+
+  try {
+      // Query to check if the username or email exists in the database
+      const query = 'SELECT * FROM users WHERE username = ? OR email = ?';
+      const [results] = await db.query(query, [usernameOrEmail, usernameOrEmail]);
+
+      if (results.length > 0) {
+          // User exists, generate OTP
+          const user = results[0];
+          const otp = Math.floor(100000 + Math.random() * 900000); // Generate OTP
+
+          // Update OTP in the database
+          const updateOtpQuery = 'UPDATE users SET otp = ? WHERE id = ?';
+          await db.query(updateOtpQuery, [otp, user.id]);
+
+          // Send OTP via email
+          const mailOptions = {
+              from: 'your-email@gmail.com',
+              to: user.email,
+              subject: 'Password Recovery OTP',
+              text: `Your OTP for password recovery is: ${otp}`,
+          };
+
+          transporter.sendMail(mailOptions, (error, info) => {
+              if (error) {
+                  console.error('Error sending email:', error);
+                  return res.status(500).json({ success: false, message: 'Failed to send OTP' });
+              } else {
+                  console.log('OTP sent:', info.response);
+                  return res.status(200).json({ success: true, message: 'OTP sent successfully', userId: user.id });
+              }
+          });
+      } else {
+          // No account found
+          return res.status(404).json({ success: false, message: 'Account not found' });
+      }
+  } catch (error) {
+      console.error('Error during password recovery:', error);
+      return res.status(500).json({ success: false, message: 'An error occurred' });
+  }
+});
+
 
 // Update User Profile
 app.post('/updateProfile', upload.single('profilePicture'), async (req, res) => {
