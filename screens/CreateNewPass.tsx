@@ -28,7 +28,7 @@ const CreateNewPass = () => {
     }
 
     // Send the new password to the server for updating
-    fetch('${BASE_URL}/update-password', {
+    fetch(`${BASE_URL}/update-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

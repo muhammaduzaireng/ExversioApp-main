@@ -600,16 +600,25 @@ app.post('/login', async (req, res) => {
 app.post('/become-artist', async (req, res) => {
   const { name, email, country, trackStack, bio, subscriptionPrice, user_id } = req.body;
 
-  const query = 'INSERT INTO artists_requests (name, email, country, track_stack, bio, subscription_price, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
-  await db.query(query, [name, email, country, trackStack, bio, subscriptionPrice, user_id], (err, result) => {
-    if (err) {
-      console.error('Error inserting artist request:', err);
-      res.status(500).json({ error: 'Failed to submit artist request' });
-    } else {
-      res.json({ success: true });
-    }
-  });
+  if (!name || !email || !country || !trackStack || !bio || !subscriptionPrice || !user_id) {
+    return res.status(400).json({ success: false, message: 'All fields are required.' });
+  }
+
+  const query = `
+    INSERT INTO artists_requests 
+    (name, email, country, track_stack, bio, subscription_price, user_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  try {
+    const [result] = await db.query(query, [name, email, country, trackStack, bio, subscriptionPrice, user_id]);
+    res.status(200).json({ success: true, message: 'Artist request submitted successfully' });
+  } catch (err) {
+    console.error('Error inserting artist request:', err);
+    res.status(500).json({ success: false, message: 'Failed to submit artist request' });
+  }
 });
+
 
 app.get('/get-artist-request', async (req, res) => {
   const { user_id } = req.query; // Expecting user_id as a query parameter
