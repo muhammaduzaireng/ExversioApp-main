@@ -240,45 +240,117 @@ const LibraryScreen = () => {
     </View>
   );
 };
+import {  Dimensions } from "react-native";
 
+const { width, height } = Dimensions.get("window");
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#1a1a1a" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "bold", color: "#fff" },
-  headerIcon: { width: 24, height: 24 },
-  playlistItem: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  playlistImage: { width: 60, height: 60, borderRadius: 10, marginRight: 15 },
-  playlistInfo: { flex: 1 },
-  playlistName: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+ 
+
+
+  container: {
+    flex: 1,
+    padding: width * 0.02, // 5% of screen width
+    backgroundColor: "#1a1a1a",
+    padding: height * 0.05,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: height * 0.02, // 2% of screen height
+  },
+  title: {
+    fontSize: width * 0.06, // 6% of screen width
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  headerIcon: {
+    width: width * 0.06, // 6% of screen width
+    height: width * 0.06, // Maintain aspect ratio
+  },
+  playlistItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: height * 0.02, // 2% of screen height
+  },
+  playlistImage: {
+    width: width * 0.15, // 15% of screen width
+    height: width * 0.15, // Maintain square shape
+    borderRadius: width * 0.03, // Rounded corners
+    marginRight: width * 0.04, // 4% of screen width
+  },
+  playlistInfo: {
+    flex: 1,
+  },
+  playlistName: {
+    fontSize: width * 0.045, // 4.5% of screen width
+    fontWeight: "bold",
+    color: "#fff",
+  },
   selectedPlaylistHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
   },
-  backButton: { fontSize: 16, color: "#2EF3DD", marginRight: 10 },
-  playlistTitle: { fontSize: 20, fontWeight: "bold", color: "#fff" },
+  backButton: {
+    fontSize: width * 0.04, // 4% of screen width
+    color: "#2EF3DD",
+    marginRight: width * 0.02, // 2% of screen width
+  },
+  playlistTitle: {
+    fontSize: width * 0.05, // 5% of screen width
+    fontWeight: "bold",
+    color: "#fff",
+  },
   musicItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
-    padding: 10,
+    marginBottom: height * 0.015, // 1.5% of screen height
+    padding: width * 0.04, // 4% of screen width
     backgroundColor: "#333",
-    borderRadius: 10,
+    borderRadius: width * 0.03, // 3% of screen width
   },
-  musicTitle: { fontSize: 16, color: "#fff", flex: 1 },
-  playButton: { fontSize: 16, color: "#2EF3DD" },
+  musicTitle: {
+    fontSize: width * 0.04, // 4% of screen width
+    color: "#fff",
+    flex: 1,
+  },
+  playButton: {
+    fontSize: width * 0.04, // 4% of screen width
+    color: "#2EF3DD",
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
-  input: { width: "80%", padding: 15, backgroundColor: "#fff", borderRadius: 10, marginBottom: 20 },
-  createButton: { padding: 15, backgroundColor: "#2EF3DD", borderRadius: 10 },
-  createButtonText: { color: "#000", fontWeight: "bold" },
-  cancelButton: { padding: 15, marginTop: 10 },
-  cancelButtonText: { color: "#fff" },
+  input: {
+    width: "80%",
+    padding: height * 0.02, // 2% of screen height
+    backgroundColor: "#fff",
+    borderRadius: width * 0.03, // 3% of screen width
+    marginBottom: height * 0.03, // 3% of screen height
+  },
+  createButton: {
+    padding: height * 0.02, // 2% of screen height
+    backgroundColor: "#2EF3DD",
+    borderRadius: width * 0.03, // 3% of screen width
+  },
+  createButtonText: {
+    color: "#000",
+    fontWeight: "bold",
+    fontSize: width * 0.045, // 4.5% of screen width
+  },
+  cancelButton: {
+    padding: height * 0.02, // 2% of screen height
+    marginTop: height * 0.015, // 1.5% of screen height
+  },
+  cancelButtonText: {
+    color: "#fff",
+    fontSize: width * 0.04, // 4% of screen width
+  },
 });
 
 export default LibraryScreen;
