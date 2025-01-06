@@ -32,31 +32,42 @@ const DashboardScreen = ({ navigation }) => {
     // Fetch feed for subscribed artists
     const fetchFeed = async (userId) => {
         try {
-            console.log('Fetching feed for userId:', userId);
-            const response = await fetch(`${BASE_URL}/get-feed?userId=${userId}`);
-            const data = await response.json();
-    
-            if (data.success && Array.isArray(data.posts)) {
-                console.log('Fetched posts:', data.posts);
-    
-                // Log the artist profile picture URLs for each post
-                data.posts.forEach((post, index) => {
-                    console.log(`Post ${index + 1}:`, {
-                        artistName: post.artist_name,
-                        profilePicture: post.artist_profile_picture,
-                    });
-                });
-    
-                setPosts(data.posts);
-            } else {
-                console.warn('Unexpected data format:', data);
-                setPosts([]);
-            }
+          console.log("Fetching feed for userId:", userId);
+          const response = await fetch(`${BASE_URL}/get-feed?userId=${userId}`);
+          const data = await response.json();
+      
+          if (data.success && Array.isArray(data.posts)) {
+            console.log("Fetched posts:", data.posts);
+      
+            // Transform profile picture URLs to include the base URL
+            const postsWithFullUrls = data.posts.map((post) => ({
+              ...post,
+              artist_profile_picture: post.artist_profile_picture
+                ? post.artist_profile_picture.startsWith("http")
+                  ? post.artist_profile_picture
+                  : `${BASE_URL}${post.artist_profile_picture}`
+                : null, // Keep null if profile picture is missing
+            }));
+      
+            // Log the transformed posts with full URLs
+            postsWithFullUrls.forEach((post, index) => {
+              console.log(`Post ${index + 1}:`, {
+                artistName: post.artist_name,
+                profilePicture: post.artist_profile_picture,
+              });
+            });
+      
+            setPosts(postsWithFullUrls);
+          } else {
+            console.warn("Unexpected data format:", data);
+            setPosts([]);
+          }
         } catch (error) {
-            console.error('Error fetching feed:', error);
-            Alert.alert('Error', 'Failed to fetch feed.');
+          console.error("Error fetching feed:", error);
+          Alert.alert("Error", "Failed to fetch feed.");
         }
-    };
+      };
+      
     
 
     const handleLike = async (postId) => {

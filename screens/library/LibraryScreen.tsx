@@ -60,9 +60,25 @@ const LibraryScreen = () => {
       const response = await axios.get(`${BASE_URL}/get-playlist-music`, {
         params: { playlist_id: playlistId },
       });
-
+  
       if (response.data.success) {
-        setPlaylistMusic(response.data.music || []);
+        // Transform URLs to include the base URL and handle null values
+        const musicWithFullUrls = response.data.music.map((item) => ({
+          ...item,
+          file_url: item.file_url
+            ? item.file_url.startsWith("http")
+              ? item.file_url
+              : `${BASE_URL}${item.file_url}`
+            : null, // Keep file_url null if it's missing
+          cover_url: item.cover_url
+            ? item.cover_url.startsWith("http")
+              ? item.cover_url
+              : `${BASE_URL}${item.cover_url}`
+            : null, // Keep cover_url null if it's missing
+        }));
+  
+        setPlaylistMusic(musicWithFullUrls);
+        console.log("Fetched playlist music:", musicWithFullUrls); // Debug log to confirm URL transformation
       } else {
         Alert.alert("Error", "Failed to fetch playlist music");
       }
@@ -71,6 +87,10 @@ const LibraryScreen = () => {
       Alert.alert("Error", "Failed to fetch playlist music");
     }
   };
+  
+  
+ 
+  
 
   const createPlaylist = async () => {
     if (!newPlaylistName.trim()) {
@@ -139,6 +159,7 @@ const LibraryScreen = () => {
   // );
 
   const renderMusicItem = ({ item, index }) => (
+    console.log("item", item),
     <View style={styles.musicItem}>
       <Text style={styles.musicTitle}>{item.music_title}</Text>
       <TouchableOpacity
@@ -146,9 +167,7 @@ const LibraryScreen = () => {
           playMusic(
             {
               ...item,
-              file_url:
-                item.file_url ||
-                "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+              file_url: item.file_url, // The file_url is now guaranteed to be a complete URL
             },
             playlistMusic, // Pass the full playlist
             index // Pass the index of the selected track

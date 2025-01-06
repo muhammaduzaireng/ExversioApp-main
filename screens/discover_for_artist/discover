@@ -51,10 +51,10 @@ const DiscoverScreen = () => {
               : null, // Keep null if profile picture is missing
           }));
     
-          setArtists(artistsWithFullUrls);
+         
     
           // Debug log to confirm the transformation
-          
+          console.log("profileurl",artistsWithFullUrls);
         } else {
           Alert.alert("Error", "Failed to load artists");
         }

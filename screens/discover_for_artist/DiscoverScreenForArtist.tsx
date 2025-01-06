@@ -11,10 +11,10 @@ import {
 import discoverStyles from '../../styles/discoverStyles';
 import dashboardStyles from '../../styles/dashboardStyles';
 import Player from '../components/Player';
-import NavigationBar from '../components/NavigationBar';
 import Sound from 'react-native-sound';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import ArtistNavigationBar from '../components/ArtistNavigationBar';
 
 type DiscoverScreenNavigationProp = StackNavigationProp<any, 'DiscoverScreen'>;
 
@@ -130,7 +130,7 @@ const DiscoverScreen = () => {
         setPlaying={setIsPlaying}
         soundRef={soundRef}
       />
-      <NavigationBar />
+      <ArtistNavigationBar />
     </View>
   );
 };

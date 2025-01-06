@@ -35,6 +35,10 @@ import BecomeArtistForm from '../screens/artist/BecomeArtistForm';
 import ArtistProfileData from '../screens/discover/ArtistProfileData';
 import MusicLibraryPage from '../screens/artist/MusicLibraryPage';
 import ArtistAlbums from '../screens/discover/ArtistAlbums';
+import CreatePost from '../screens/components/CreatePost';
+import ArtistProfileDataForArtist from '../screens/discover_for_artist/ArtistProfileData';
+import DiscoverScreenForArtist from '../screens/discover_for_artist/DiscoverScreenForArtist';
+import ProfileScreenArtist from '../screens/profile/ProfileScreenArtist';
 
 
 
@@ -76,7 +80,11 @@ const MainStackNavigator = () => {
         <Stack.Screen name="ArtistProfileData" component={ArtistProfileData} options={{headerShown: false}} />
         <Stack.Screen name="MusicLibraryPage" component={MusicLibraryPage} options={{headerShown: false}} />
         <Stack.Screen name="ArtistAlbums" component={ArtistAlbums} options={{headerShown: false}} />
-        
+        <Stack.Screen name="CreatePost" component={CreatePost} options={{headerShown: false}} />
+        <Stack.Screen name="ProfileScreenArtist" component={ProfileScreenArtist} options={{headerShown: false}} />
+              
+        <Stack.Screen name="ArtistProfileDataForArtist" component={ArtistProfileDataForArtist} options={{headerShown: false}} />
+        <Stack.Screen name="DiscoverScreenForArtist" component={DiscoverScreenForArtist} options={{headerShown: false}} />
         
         <Stack.Screen name="example" component={ProfileDataScreen} options={{title:'example'}} />
       </Stack.Navigator>

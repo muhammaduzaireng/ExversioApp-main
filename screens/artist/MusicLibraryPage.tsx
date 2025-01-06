@@ -269,7 +269,7 @@
 // import Sound from "react-native-sound";
 
 // const AudioFileUpload = () => {
-//   const BASE_URL = "https://api.exversio.com"; // Replace with your backend server URL
+//   const BASE_URL = "https://api.exversio.com:3000"; // Replace with your backend server URL
 //   const [selectedFile, setSelectedFile] = useState(null);
 //   const [musicList, setMusicList] = useState([]); // List of available music files
 //   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -508,15 +508,19 @@ import {
   TextInput,
   Alert,
   Image,
+  Dimensions
 } from "react-native";
 import DocumentPicker from "react-native-document-picker";
 import * as ImagePicker from "react-native-image-picker";
 import axios from "axios";
 import Sound from "react-native-sound";
+
+
 // import ProgressCircle from "react-native-progress-circle";
 import Slider from "@react-native-community/slider";
 import CircularProgress from "../components/CircularProgress";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ArtistNavigationBar from "../components/ArtistNavigationBar";
 
 
 const MusicApp = () => {
@@ -527,6 +531,7 @@ const MusicApp = () => {
   const [isMusicModalVisible, setIsMusicModalVisible] = useState(false);
   const [selectedAlbumId, setSelectedAlbumId] = useState(null);
   const [newMusic, setNewMusic] = useState({
+    
     title: "",
     type: "",
     file: null,
@@ -539,11 +544,25 @@ const MusicApp = () => {
   const [playbackDuration, setPlaybackDuration] = useState(0);
   const soundRef = useRef(null);
 
+ 
   // Fetch Albums
   const fetchAlbums = async () => {
     try {
+      console.log("Fetching albums...");
       const response = await axios.get(`${BASE_URL}/albums`);
-      setAlbums(response.data);
+  
+      const processedAlbums = response.data.map((album) => ({
+        ...album,
+        cover: enforceHttps(album.cover), // Ensure album cover uses HTTPS
+        tracks: album.tracks.map((track) => ({
+          ...track,
+          file_url: enforceHttps(track.file_url), // Ensure track file URLs use HTTPS
+        })),
+      }));
+  
+      setAlbums(processedAlbums);
+  
+      console.log("Processed albums with enforced HTTPS:", processedAlbums);
     } catch (error) {
       console.error("Error fetching albums:", error);
     }
@@ -581,8 +600,6 @@ const MusicApp = () => {
   };
 
   // Create Album
- 
-
   const createAlbum = async () => {
     if (!newAlbum.title.trim()) {
       Alert.alert("Validation Error", "Album title is required.");
@@ -590,8 +607,7 @@ const MusicApp = () => {
     }
   
     try {
-      const artistId = await AsyncStorage.getItem('artistId'); // Fetch artist_id from AsyncStorage
-  
+      const artistId = await AsyncStorage.getItem("artistId");
       if (!artistId) {
         Alert.alert("Error", "Artist ID not found. Please log in as an artist.");
         return;
@@ -599,17 +615,17 @@ const MusicApp = () => {
   
       const formData = new FormData();
       formData.append("title", newAlbum.title);
-      formData.append("artist_id", artistId); // Add artist_id to formData
+      formData.append("artist_id", artistId);
   
       if (newAlbum.cover) {
         formData.append("cover", {
-          uri: newAlbum.cover,
+          uri: enforceHttps(newAlbum.cover),
           name: `cover-${Date.now()}.jpg`,
           type: "image/jpeg",
         });
       }
   
-      await axios.post(`${BASE_URL}/create-album`, formData, {
+      await axios.post(enforceHttps(`${BASE_URL}/create-album`), formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
   
@@ -633,8 +649,7 @@ const MusicApp = () => {
     }
   
     try {
-      const artistId = await AsyncStorage.getItem('artistId'); // Fetch artist_id from AsyncStorage
-  
+      const artistId = await AsyncStorage.getItem("artistId");
       if (!artistId) {
         Alert.alert("Error", "Artist ID not found. Please log in as an artist.");
         return;
@@ -642,24 +657,24 @@ const MusicApp = () => {
   
       const formData = new FormData();
       formData.append("album_id", selectedAlbumId);
-      formData.append("artist_id", artistId); // Add artist_id to formData
+      formData.append("artist_id", artistId);
       formData.append("title", title);
       formData.append("type", type);
       formData.append("file", {
-        uri: file.uri,
+        uri: enforceHttps(file.uri),
         name: file.name,
         type: file.type,
       });
   
       if (cover) {
         formData.append("cover", {
-          uri: cover,
+          uri: enforceHttps(cover),
           name: `cover-${Date.now()}.jpg`,
           type: "image/jpeg",
         });
       }
   
-      await axios.post(`${BASE_URL}/add-music`, formData, {
+      await axios.post(enforceHttps(`${BASE_URL}/add-music`), formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -680,18 +695,32 @@ const MusicApp = () => {
     }
   };
   
+  // Utility function to enforce https
+  const enforceHttps = (url) => {
+    if (!url || typeof url !== "string") {
+      return ""; // Return an empty string if url is null, undefined, or not a string
+    }
+    return url.startsWith("http://") ? url.replace("http://", "https://") : url;
+  };
+  
+  
 
   // Play Music
   const playMusic = (fileUrl) => {
+    // Enforce correct base URL and HTTPS
+    const fullUrl = enforceHttps(fileUrl);
+    // console.log(`Attempting to play music from URL: ${fullUrl}`);
+  
     if (currentPlaying && soundRef.current) {
       soundRef.current.stop(() => {
         soundRef.current.release();
       });
     }
-
-    const sound = new Sound(fileUrl, null, (error) => {
+  
+    const sound = new Sound(fullUrl, null, (error) => {
       if (error) {
-        console.error("Failed to load sound", error);
+        console.error("Failed to load sound:", error);
+        Alert.alert("Error", "Failed to load sound.");
         return;
       }
       setPlaybackDuration(sound.getDuration());
@@ -701,11 +730,12 @@ const MusicApp = () => {
         setIsPlaying(false);
       });
     });
-
+  
     soundRef.current = sound;
     setCurrentPlaying(fileUrl);
     setIsPlaying(true);
   };
+  
 
   const pauseMusic = () => {
     if (soundRef.current) {
@@ -714,61 +744,70 @@ const MusicApp = () => {
     }
   };
 
-  const renderAlbum = ({ item }) => (
-    <View style={styles.albumCard}>
-      {item.cover ? (
-        <Image source={{ uri: item.cover }} style={styles.albumCover} />
-      ) : (
-        <View style={styles.albumCoverPlaceholder}>
-          <Text style={styles.albumCoverText}>{item.title[0]}</Text>
-        </View>
-      )}
-      <Text style={styles.albumTitle}>{item.title}</Text>
-      <FlatList
-        data={item.tracks}
-        keyExtractor={(track) => track.music_id.toString()}
-        renderItem={({ item: track }) => (
-          <View style={styles.trackCard}>
-            <Text style={styles.trackName}>{track.title}</Text>
-            <TouchableOpacity
-              onPress={() =>
-                currentPlaying === track.file_url && isPlaying
-                  ? pauseMusic()
-                  : playMusic(track.file_url)
-              }
-            >
-              <Text style={styles.playButtonText}>
-                {currentPlaying === track.file_url && isPlaying ? "Pause" : "Play"}
-              </Text>
-            </TouchableOpacity>
-            {currentPlaying === track.file_url && (
-              <Slider
-                style={styles.progressBar}
-                minimumValue={0}
-                maximumValue={playbackDuration}
-                value={playbackPosition}
-                onValueChange={(value) => {
-                  if (soundRef.current) {
-                    soundRef.current.setCurrentTime(value);
-                  }
-                }}
-              />
-            )}
+  const renderAlbum = ({ item }) => {
+    // console.log(`Rendering album: ${item.title}`);
+    console.log(`Album cover updated: ${item.cover}`);
+    return (
+      <View style={styles.albumCard}>
+        {item.cover ? (
+          <Image source={{ uri: item.cover }} style={styles.albumCover} />
+        ) : (
+          <View style={styles.albumCoverPlaceholder}>
+            <Text style={styles.albumCoverText}>{item.title[0]}</Text>
           </View>
         )}
-      />
-      <TouchableOpacity
-        style={styles.addMusicButton}
-        onPress={() => {
-          setSelectedAlbumId(item.album_id);
-          setIsMusicModalVisible(true);
-        }}
-      >
-        <Text style={styles.addMusicButtonText}>Add Music</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
+        <Text style={styles.albumTitle}>{item.title}</Text>
+        <FlatList
+          data={item.tracks}
+          keyExtractor={(track) => track.music_id.toString()}
+          renderItem={({ item: track }) => {
+            // console.log(`Rendering track: ${track.file_url}`);
+            return (
+              <View style={styles.trackCard}>
+                <Text style={styles.trackName}>{track.title}</Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    currentPlaying === track.file_url && isPlaying
+                      ? pauseMusic()
+                      : playMusic(track.file_url)
+                  }
+                >
+                  <Text style={styles.playButtonText}>
+                    {currentPlaying === track.file_url && isPlaying
+                      ? "Pause"
+                      : "Play"}
+                  </Text>
+                </TouchableOpacity>
+                {currentPlaying === track.file_url && (
+                  <Slider
+                    style={styles.progressBar}
+                    minimumValue={0}
+                    maximumValue={playbackDuration}
+                    value={playbackPosition}
+                    onValueChange={(value) => {
+                      if (soundRef.current) {
+                        soundRef.current.setCurrentTime(value);
+                      }
+                    }}
+                  />
+                )}
+              </View>
+            );
+          }}
+        />
+        <TouchableOpacity
+          style={styles.addMusicButton}
+          onPress={() => {
+            setSelectedAlbumId(item.album_id);
+            setIsMusicModalVisible(true);
+          }}
+        >
+          <Text style={styles.addMusicButtonText}>Add Music</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+  
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -782,7 +821,6 @@ const MusicApp = () => {
         keyExtractor={(item) => item.album_id.toString()}
         renderItem={renderAlbum}
       />
-
       {/* Album Modal */}
       <Modal visible={isAlbumModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
@@ -792,7 +830,11 @@ const MusicApp = () => {
             value={newAlbum.title}
             onChangeText={(text) => setNewAlbum({ ...newAlbum, title: text })}
           />
-          <TouchableOpacity onPress={() => selectImage((uri) => setNewAlbum({ ...newAlbum, cover: uri }))}>
+          <TouchableOpacity
+            onPress={() =>
+              selectImage((uri) => setNewAlbum({ ...newAlbum, cover: uri }))
+            }
+          >
             <Text style={styles.coverButtonText}>Select Cover Image</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={createAlbum}>
@@ -803,7 +845,7 @@ const MusicApp = () => {
           </TouchableOpacity>
         </View>
       </Modal>
-
+  
       {/* Music Modal */}
       <Modal visible={isMusicModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
@@ -819,21 +861,24 @@ const MusicApp = () => {
             value={newMusic.type}
             onChangeText={(text) => setNewMusic({ ...newMusic, type: text })}
           />
-          <TouchableOpacity onPress={() => selectImage((uri) => setNewMusic({ ...newMusic, cover: uri }))}>
+          <TouchableOpacity
+            onPress={() =>
+              selectImage((uri) => setNewMusic({ ...newMusic, cover: uri }))
+            }
+          >
             <Text style={styles.coverButtonText}>Select Cover Image</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() =>
-              DocumentPicker.pick({ type: [DocumentPicker.types.audio] }).then((res) =>
-                setNewMusic({ ...newMusic, file: res[0] })
-              )
+              DocumentPicker.pickSingle({ type: [DocumentPicker.types.audio] })
+                .then((res) => setNewMusic({ ...newMusic, file: res }))
+                .catch((err) => console.error(err))
             }
           >
             <Text style={styles.coverButtonText}>Select Music File</Text>
           </TouchableOpacity>
           {uploadProgress > 0 && uploadProgress < 100 && (
-           <CircularProgress percent={uploadProgress} />
-
+            <CircularProgress percent={uploadProgress} />
           )}
           <TouchableOpacity onPress={addMusic}>
             <Text style={styles.saveButtonText}>Add Music</Text>
@@ -843,30 +888,119 @@ const MusicApp = () => {
           </TouchableOpacity>
         </View>
       </Modal>
+      <ArtistNavigationBar />
     </View>
+    
   );
 };
-
+const { width, height } = Dimensions.get("window");
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#1a1a1a" },
-  createAlbumButton: { backgroundColor: "#2EF3DD", padding: 15, borderRadius: 10, alignItems: "center" },
-  createAlbumButtonText: { fontSize: 16, fontWeight: "bold", color: "#000" },
-  albumCard: { marginBottom: 20, padding: 15, backgroundColor: "#3a3a3a", borderRadius: 10 },
-  albumCover: { width: "100%", height: 200, borderRadius: 10 },
-  albumCoverPlaceholder: { width: "100%", height: 200, justifyContent: "center", alignItems: "center", backgroundColor: "#555" },
-  albumCoverText: { fontSize: 24, fontWeight: "bold", color: "#fff" },
-  albumTitle: { marginTop: 10, fontSize: 20, color: "#fff", fontWeight: "bold" },
-  trackCard: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  trackName: { fontSize: 16, color: "#fff", flex: 1 },
-  playButtonText: { fontSize: 16, color: "#2EF3DD" },
-  addMusicButton: { backgroundColor: "#FFA500", padding: 10, borderRadius: 10, alignItems: "center" },
-  addMusicButtonText: { fontSize: 16, color: "#000", fontWeight: "bold" },
-  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.8)", padding: 20 },
-  input: { width: "100%", padding: 15, backgroundColor: "#fff", borderRadius: 10, marginBottom: 15 },
-  coverButtonText: { fontSize: 16, color: "#2EF3DD", marginBottom: 10 },
-  saveButtonText: { fontSize: 16, fontWeight: "bold", color: "#2EF3DD" },
-  doneButtonText: { fontSize: 16, fontWeight: "bold", color: "#2EF3DD" },
-  progressBar: { flex: 1, marginHorizontal: 10 },
+  
+  container: {
+    flex: 1,
+    padding: width * 0.02, // Responsive padding based on screen width
+    backgroundColor: "#1a1a1a",
+    
+  },
+  createAlbumButton: {
+    backgroundColor: "#2EF3DD",
+    padding: height * 0.02, // Responsive padding based on screen height
+    borderRadius: width * 0.02, // Responsive border radius
+    alignItems: "center",
+    marginTop: width * 0.1,
+  },
+  createAlbumButtonText: {
+    fontSize: width * 0.04, // Responsive font size
+    fontWeight: "bold",
+    color: "#000",
+  },
+  albumCard: {
+    marginBottom: height * 0.02, // Responsive margin
+    padding: width * 0.05,
+    backgroundColor: "#3a3a3a",
+    borderRadius: width * 0.03,
+  },
+  albumCover: {
+    width: "100%",
+    height: height * 0.25, // Responsive height
+    borderRadius: width * 0.02,
+  },
+  albumCoverPlaceholder: {
+    width: "100%",
+    height: height * 0.25,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#555",
+  },
+  albumCoverText: {
+    fontSize: width * 0.06,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  albumTitle: {
+    marginTop: height * 0.01,
+    fontSize: width * 0.05,
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  trackCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: height * 0.01,
+  },
+  trackName: {
+    fontSize: width * 0.04,
+    color: "#fff",
+    flex: 1,
+  },
+  playButtonText: {
+    fontSize: width * 0.04,
+    color: "#2EF3DD",
+  },
+  addMusicButton: {
+    backgroundColor: "#2EF3DD",
+    padding: height * 0.015,
+    borderRadius: width * 0.02,
+    alignItems: "center",
+  },
+  addMusicButtonText: {
+    fontSize: width * 0.04,
+    color: "#000",
+    fontWeight: "bold",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    padding: width * 0.05,
+  },
+  input: {
+    width: "100%",
+    padding: width * 0.04,
+    backgroundColor: "#fff",
+    borderRadius: width * 0.02,
+    marginBottom: height * 0.02,
+  },
+  coverButtonText: {
+    fontSize: width * 0.04,
+    color: "#2EF3DD",
+    marginBottom: height * 0.01,
+  },
+  saveButtonText: {
+    fontSize: width * 0.04,
+    fontWeight: "bold",
+    color: "#2EF3DD",
+  },
+  doneButtonText: {
+    fontSize: width * 0.04,
+    fontWeight: "bold",
+    color: "#2EF3DD",
+  },
+  progressBar: {
+    flex: 1,
+    marginHorizontal: width * 0.03,
+  },
 });
 
 export default MusicApp;

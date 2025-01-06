@@ -4,7 +4,7 @@ import artistProfileStyles from '../../styles/artist/artistProfileStyles';
 import artistPostStyles from '../../styles/artist/artistPostStyles';
 import dashboardStyles from '../../styles/dashboardStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NavigationBar from '../components/NavigationBar';
+import ArtistNavigationBar from '../components/ArtistNavigationBar';
 import Player from '../components/Player';
 import { useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -506,7 +506,7 @@ const ArtistProfileData = () => {
                 renderItem={renderPost}
             />
             <Player />
-            <NavigationBar />
+            <ArtistNavigationBar />
         </View>
     );
 };
