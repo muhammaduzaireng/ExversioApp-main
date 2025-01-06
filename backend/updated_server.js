@@ -220,6 +220,51 @@ app.get('/getUserProfile', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to fetch user profile.' });
   }
 });
+app.post('/verifyOTP', async (req, res) => {
+  const { userId, otp, isRecovery } = req.body; // Assuming 'isRecovery' is a flag to indicate the process (signup or recovery)
+
+  if (!userId || !otp) {
+    return res.status(400).json({ success: false, message: 'User ID and OTP are required' });
+  }
+
+  try {
+    // Verify OTP
+    const query = 'SELECT * FROM users WHERE id = ? AND otp = ?';
+    const [results] = await db.query(query, [userId, otp]);
+
+    if (results.length > 0) {
+      console.log('OTP verified for userId:', userId);
+
+      // Check if the process is for recovery or signup
+      if (isRecovery) {
+        // OTP is for password recovery
+        res.status(200).json({
+          success: true,
+          message: 'OTP verified for password recovery',
+          nextStep: 'createNewPassword',
+        });
+      } else {
+        // OTP is for signup verification
+        res.status(200).json({
+          success: true,
+          message: 'OTP verified for signup',
+          nextStep: 'completeSignup',
+        });
+      }
+
+      // Clear the OTP after successful verification
+      const clearOtpQuery = 'UPDATE users SET otp = NULL WHERE id = ?';
+      await db.query(clearOtpQuery, [userId]);
+      console.log('OTP cleared for userId:', userId);
+    } else {
+      // OTP is invalid
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+  } catch (err) {
+    console.error('Error verifying OTP:', err.message, err.stack);
+    return res.status(500).json({ success: false, message: 'OTP verification failed' });
+  }
+});
 
 // Update User Profile
 app.post('/updateProfile', upload.single('profilePicture'), async (req, res) => {
