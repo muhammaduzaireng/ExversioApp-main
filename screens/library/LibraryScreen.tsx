@@ -236,22 +236,23 @@ const LibraryScreen = () => {
         </View>
       </Modal>
 
-      <Player />
+      {/* Player and Navigation */}
+      <View style={styles.bottomSection}>
+        <Player />
+        <NavigationBar />
+      </View>
     </View>
   );
 };
 import {  Dimensions } from "react-native";
+import NavigationBar from "../components/NavigationBar";
 
 const { width, height } = Dimensions.get("window");
 const styles = StyleSheet.create({
- 
-
-
   container: {
     flex: 1,
-    padding: width * 0.02, // 5% of screen width
     backgroundColor: "#1a1a1a",
-    padding: height * 0.05,
+    padding: width * 0.02, // 2% of screen width
   },
   header: {
     flexDirection: "row",
@@ -350,6 +351,9 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: "#fff",
     fontSize: width * 0.04, // 4% of screen width
+  },
+  bottomSection: {
+    flexDirection: "column", // Stack Player and NavigationBar vertically
   },
 });
 

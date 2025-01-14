@@ -19,13 +19,15 @@ const playerMaximizeStyles = StyleSheet.create({
     marginTop: height * 0.02, // 2% of screen height
   },
   backIcon: {
-    width: width * 0.05, // 5% of screen width
+    width: width * 0.03, // 5% of screen width
     height: height * 0.03, // 3% of screen height
     tintColor: '#fff',
+    padding: 10,
+    marginTop: height * 0.02, // 2% of screen height
   },
   menuIcon: {
-    width: width * 0.05,
-    height: width * 0.05,
+    width: width * 0.01,
+    height: width * 0.03,
     tintColor: '#fff',
     transform: [{ rotate: '90deg' }],
   },
@@ -92,22 +94,22 @@ const playerMaximizeStyles = StyleSheet.create({
     marginBottom: height * 0.03,
   },
   controlIcon: {
-    width: width * 0.07,
-    height: width * 0.07,
+    width: width * 0.03,
+    height: width * 0.03,
     tintColor: '#fff',
   },
   playButton: {
-    width: width * 0.15,
-    height: width * 0.15,
+    width: width * 0.03,
+    height: width * 0.03,
     backgroundColor: '#2ef3dd',
     borderRadius: width * 0.075, // Half of width/height for a circle
     justifyContent: 'center',
     alignItems: 'center',
   },
   playIcon: {
-    width: width * 0.05,
-    height: width * 0.06,
-    tintColor: '#00041b',
+    width: width * 0.03,
+    height: width * 0.03,
+    tintColor: '#fff',
   },
   footer: {
     flexDirection: 'row',
@@ -122,6 +124,12 @@ const playerMaximizeStyles = StyleSheet.create({
     width: width * 0.06,
     height: width * 0.06,
     tintColor: '#fff',
+  },
+  backButton: {
+    paddingTop: height * 0.02, // 2% of screen height
+    fontSize: width * 0.04, // 4% of screen width
+    color: "#2EF3DD",
+    marginRight: width * 0.02, // 2% of screen width
   },
 });
 

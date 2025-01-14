@@ -99,25 +99,22 @@ const Player = () => {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute", // Ensure the player stays fixed
-    bottom: 0, // Position it at the bottom
-    left: 0,
-    right: 0,
-    backgroundColor: "#333",
-    padding: 10,
+    position: 'relative', // Use relative positioning unless absolute is required
+    width: '100%',
+    marginBottom: 90,
+    backgroundColor: '#1E1E1E',
     borderTopWidth: 1,
-    borderColor: "#555",
-    zIndex: 100, // Bring it above other elements
+   paddingTop: 10,
   },
   row: { flexDirection: "row", alignItems: "center" },
-  avatar: { width: 50, height: 50, borderRadius: 25 },
+  avatar: { width: 50, height: 50, borderRadius: 25, marginHorizontal: 10 },
   info: { flex: 1, marginHorizontal: 10 },
   title: { fontSize: 16, color: "#fff", fontWeight: "bold" },
   artist: { fontSize: 14, color: "#aaa" },
-  playIcon: { width: 24, height: 24, tintColor: "#fff" },
-  maximizeIcon: { width: 24, height: 24, tintColor: "#fff" },
+  playIcon: { width: 18, height: 20, tintColor: "#fff", margin: 10 },
+  maximizeIcon: { width: 18, height: 18, tintColor: "#fff" },
   progressBar: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  time: { fontSize: 12, color: "#aaa", marginHorizontal: 5 },
+  time: { fontSize: 12, color: "#aaa", marginHorizontal: 10 },
   progress: { flex: 1, height: 5, backgroundColor: "#555", borderRadius: 2.5 },
   progressFill: { height: "100%", backgroundColor: "#2EF3DD" },
 });

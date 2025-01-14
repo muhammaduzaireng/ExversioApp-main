@@ -185,10 +185,7 @@ const PlayerMaximize = () => {
       <View style={playerMaximizeStyles.mainContainer}>
         <View style={playerMaximizeStyles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Image
-              source={require("../../assets/icons/3994400_arrow_forward_navigation_next_right_icon.png")}
-              style={playerMaximizeStyles.backIcon}
-            />
+            <Text style={playerMaximizeStyles.backButton}>← Back</Text>
           </TouchableOpacity>
         </View>
 
