@@ -1285,6 +1285,7 @@ app.get('/get-feed', async (req, res) => {
                         'text', comments.comment_text,
                         'user_id', comments.user_id,
                         'user_name', users.name,
+                        'user_username', users.username,  -- Include the username of the user
                         'created_at', comments.created_at
                     )
                 ELSE NULL

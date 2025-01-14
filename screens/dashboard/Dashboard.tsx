@@ -51,11 +51,18 @@ const DashboardScreen = ({ navigation }) => {
       
             // Log the transformed posts with full URLs
             postsWithFullUrls.forEach((post, index) => {
-              console.log(`Post ${index + 1}:`, {
-                artistName: post.artist_name,
-                profilePicture: post.artist_profile_picture,
+                console.log(`Post ${index + 1}:`, {
+                  artistName: post.artist_name,
+                  profilePicture: post.artist_profile_picture,
+                  postContent: post.content,
+                  comments: post.comments.map((comment, commentIndex) => ({
+                    commentText: comment.text,
+                    userName: comment.user_name,  // Full name of the user
+                    userUsername: comment.user_username,  // Username of the user
+                  })),
+                });
               });
-            });
+              
       
             setPosts(postsWithFullUrls);
           } else {
@@ -237,7 +244,7 @@ const DashboardScreen = ({ navigation }) => {
                         <View key={comment?.id || index} style={dashboardStyles.commentContainer}>
                             <Text style={dashboardStyles.commentText}>
                                 <Text style={dashboardStyles.commentAuthor}>
-                                    {`${comment?.user_name || 'Anonymous'}: `}
+                                    {`${comment?.user_username || 'Anonymous'}: `}
                                 </Text>
                                 {comment?.text || 'No comment available'}
                             </Text>
