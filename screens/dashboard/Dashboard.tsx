@@ -165,7 +165,17 @@ const DashboardScreen = ({ navigation }) => {
                                 style={dashboardStyles.verifiedIcon}
                             />
                         </View>
-                        <Text style={dashboardStyles.timestamp}>{new Date(item.created_at).toLocaleString()}</Text>
+                        <Text style={dashboardStyles.timestamp}>
+  {new Date(item.created_at).toLocaleString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })}
+</Text>
+
                     </View>
                 </View>
     

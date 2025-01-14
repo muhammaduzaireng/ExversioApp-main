@@ -885,6 +885,74 @@ app.get('/approved-artists', async (req, res) => {
 //     res.status(500).json({ success: false, message: 'Failed to fetch posts' });
 //   }
 // });
+//working get post///
+// app.get('/get-posts', async (req, res) => {
+//   const { artistId, userId } = req.query;
+
+//   console.log("Query parameters:", req.query); // Log all query parameters
+//   console.log("Fetching posts for artistId:", artistId); // Log artistId
+//   console.log("Fetching posts for userId:", userId); // Log userId
+
+//   if (!artistId) {
+//     return res.status(400).json({ success: false, message: 'artistId is required' });
+//   }
+
+//   const query = `
+//     SELECT 
+//       posts.*, 
+//       approved_artists.name AS artist_name,
+//       (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
+//       CASE 
+//         WHEN EXISTS (SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) THEN 1
+//         ELSE 0
+//       END AS isLiked,
+//       COALESCE(
+//         JSON_ARRAYAGG(
+//           CASE
+//             WHEN comments.id IS NOT NULL THEN
+//               JSON_OBJECT(
+//                 'id', comments.id, 
+//                 'text', comments.comment_text,
+//                 'user_id', comments.user_id,
+//                 'user_name', users.name,
+//                 'created_at', comments.created_at
+//               )
+//             ELSE NULL
+//           END
+//         ), '[]'
+//       ) AS comments
+//     FROM posts
+//     LEFT JOIN comments ON posts.id = comments.post_id
+//     LEFT JOIN users ON comments.user_id = users.id
+//     LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
+//     WHERE posts.artist_id = ?
+//     GROUP BY posts.id
+//     ORDER BY posts.created_at DESC;
+//   `;
+
+//   try {
+//     const [posts] = await db.query(query, [userId, artistId]);
+
+//     // Clean up comments: Remove null objects from the aggregated JSON array
+//     const formattedPosts = posts.map(post => {
+//       if (post.comments) {
+//         try {
+//           const parsedComments = JSON.parse(post.comments).filter(comment => comment !== null);
+//           post.comments = parsedComments;
+//         } catch (error) {
+//           console.error(`Error parsing comments for post ${post.id}:`, error);
+//           post.comments = [];
+//         }
+//       }
+//       return post;
+//     });
+
+//     res.json({ success: true, posts: formattedPosts });
+//   } catch (err) {
+//     console.error('Error fetching posts:', err);
+//     res.status(500).json({ success: false, message: 'Failed to fetch posts' });
+//   }
+// });
 
 app.get('/get-posts', async (req, res) => {
   const { artistId, userId } = req.query;
@@ -914,7 +982,8 @@ app.get('/get-posts', async (req, res) => {
                 'id', comments.id, 
                 'text', comments.comment_text,
                 'user_id', comments.user_id,
-                'user_name', users.name,
+                'user_name', users.name,  -- Full name of the user
+                'user_username', users.username,  -- Username of the user (new field)
                 'created_at', comments.created_at
               )
             ELSE NULL
@@ -923,7 +992,7 @@ app.get('/get-posts', async (req, res) => {
       ) AS comments
     FROM posts
     LEFT JOIN comments ON posts.id = comments.post_id
-    LEFT JOIN users ON comments.user_id = users.id
+    LEFT JOIN users ON comments.user_id = users.id  -- Join users table to get the username
     LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
     WHERE posts.artist_id = ?
     GROUP BY posts.id
@@ -953,7 +1022,6 @@ app.get('/get-posts', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch posts' });
   }
 });
-
 
 
 

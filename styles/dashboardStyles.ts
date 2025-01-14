@@ -242,6 +242,11 @@ moreIcon: {
     marginRight:10,
     marginLeft:10,
 },
+noCommentsText:{
+    color: '#fff',
+    fontSize: 14,
+    marginTop: 10,
+}
 });
 
 export default dashboardStyles;
