@@ -237,11 +237,11 @@ const LibraryScreen = () => {
       </Modal>
 
       {/* Player and Navigation */}
-      <View style={styles.bottomSection}>
+      
         <Player />
         <NavigationBar />
       </View>
-    </View>
+    
   );
 };
 import {  Dimensions } from "react-native";

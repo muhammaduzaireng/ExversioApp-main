@@ -1641,27 +1641,75 @@ app.post("/add-music-to-playlist", async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to add music to playlist." });
   }
 });
+//working get playlist music
+// app.get("/get-playlist-music", async (req, res) => {
+//   const { playlist_id } = req.query;
+
+//   if (!playlist_id) {
+//     return res.status(400).json({ success: false, message: "Playlist ID is required." });
+//   }
+
+//   try {
+//     const query = `
+//       SELECT pm.music_id, am.title AS music_title, am.file_url, am.cover_url
+//       FROM playlistmusic pm
+//       INNER JOIN albummusic am ON pm.music_id = am.music_id
+//       WHERE pm.playlist_id = ?
+//     `;
+//     const [rows] = await db.execute(query, [playlist_id]);
+
+//     res.status(200).json({ success: true, music: rows });
+//   } catch (error) {
+//     console.error("Database Error:", error);
+//     res.status(500).json({ success: false, message: "Failed to fetch playlist music." });
+//   }
+// });
 
 app.get("/get-playlist-music", async (req, res) => {
   const { playlist_id } = req.query;
 
+  // Validate input
   if (!playlist_id) {
     return res.status(400).json({ success: false, message: "Playlist ID is required." });
   }
 
   try {
+    // SQL query to fetch playlist music details
     const query = `
-      SELECT pm.music_id, am.title AS music_title, am.file_url, am.cover_url
-      FROM playlistmusic pm
-      INNER JOIN albummusic am ON pm.music_id = am.music_id
-      WHERE pm.playlist_id = ?
+      SELECT 
+        pm.music_id, 
+        am.title AS music_title, 
+        am.file_url, 
+        am.cover_url, 
+        am.artist_id, 
+        aa.name AS artist_name
+      FROM 
+        playlistmusic pm
+      INNER JOIN 
+        albummusic am 
+      ON 
+        pm.music_id = am.music_id
+      INNER JOIN 
+        approved_artists aa 
+      ON 
+        am.artist_id = aa.artist_id
+      WHERE 
+        pm.playlist_id = ?
     `;
+
+    // Execute query
     const [rows] = await db.execute(query, [playlist_id]);
 
+    // Check if no data is found
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "No music found for the given playlist." });
+    }
+
+    // Send response
     res.status(200).json({ success: true, music: rows });
   } catch (error) {
     console.error("Database Error:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch playlist music." });
+    res.status(500).json({ success: false, message: "Failed to fetch playlist music.", error: error.message });
   }
 });
 
