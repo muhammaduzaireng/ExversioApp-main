@@ -13,6 +13,7 @@ const Player = () => {
     setIsPlaying,
     playlist,
     currentMusicIndex,
+    artistName,  // Access artistName from PlayerContext
   } = usePlayer();
   const navigation = useNavigation();
 
@@ -71,6 +72,9 @@ const Player = () => {
         />
         <View style={styles.info}>
           <Text style={styles.title}>{currentMusic?.music_title || "No Music Playing"}</Text>
+          {artistName && (
+            <Text style={styles.artist}>{artistName}</Text>  // Display artist name here
+          )}
         </View>
         <TouchableOpacity onPress={handlePlayPause}>
           <Image
@@ -98,19 +102,29 @@ const Player = () => {
 };
 
 const styles = StyleSheet.create({
+  
   container: {
-    position: 'relative', // Use relative positioning unless absolute is required
-    width: '100%',
-    marginBottom: 90,
-    backgroundColor: '#1E1E1E',
+    position: 'absolute',
+    bottom: 70,
+    left: 0,
+    right: 0,
+  
+    justifyContent: 'space-around',
+    paddingVertical: 20,
     borderTopWidth: 1,
-   paddingTop: 10,
+    borderTopColor: '#333',
+    borderBottomColor: '#333',
+    backgroundColor: '#1E1E1E',    // To control vertical padding independently
+    zIndex: 100, 
+               // Ensure the player stays on top of other content
   },
+  
+  
   row: { flexDirection: "row", alignItems: "center" },
   avatar: { width: 50, height: 50, borderRadius: 25, marginHorizontal: 10 },
   info: { flex: 1, marginHorizontal: 10 },
   title: { fontSize: 16, color: "#fff", fontWeight: "bold" },
-  artist: { fontSize: 14, color: "#aaa" },
+  artist: { fontSize: 14, color: "#aaa" },  // Styling for artist name
   playIcon: { width: 18, height: 20, tintColor: "#fff", margin: 10 },
   maximizeIcon: { width: 18, height: 18, tintColor: "#fff" },
   progressBar: { flexDirection: "row", alignItems: "center", marginTop: 10 },

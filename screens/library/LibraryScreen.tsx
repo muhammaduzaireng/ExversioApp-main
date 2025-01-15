@@ -24,6 +24,7 @@ const LibraryScreen = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [userId, setUserId] = useState(null);
+  const [currentMusicIndex, setCurrentMusicIndex] = useState(null);
 
   useEffect(() => {
     const getUserId = async () => {
@@ -75,10 +76,12 @@ const LibraryScreen = () => {
               ? item.cover_url
               : `${BASE_URL}${item.cover_url}`
             : null, // Keep cover_url null if it's missing
+          artist_name: item.artist_name || "Unknown Artist", // Handle missing artist name
         }));
   
+        // Set the transformed data to state
         setPlaylistMusic(musicWithFullUrls);
-        console.log("Fetched playlist music:", musicWithFullUrls); // Debug log to confirm URL transformation
+        console.log("Fetched playlist music with artist names:", musicWithFullUrls); // Debug log to confirm URL transformation and artist names
       } else {
         Alert.alert("Error", "Failed to fetch playlist music");
       }
@@ -87,6 +90,7 @@ const LibraryScreen = () => {
       Alert.alert("Error", "Failed to fetch playlist music");
     }
   };
+  
   
   
  
@@ -352,9 +356,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: width * 0.04, // 4% of screen width
   },
-  bottomSection: {
-    flexDirection: "column", // Stack Player and NavigationBar vertically
-  },
+  
 });
 
 export default LibraryScreen;

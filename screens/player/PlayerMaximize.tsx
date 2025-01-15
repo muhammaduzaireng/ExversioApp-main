@@ -22,6 +22,7 @@ const PlayerMaximize = () => {
     setIsPlaying,
     setProgress,
     setDuration,
+    artistName
   } = usePlayer();
 
   const [repeat, setRepeat] = useState(false);
@@ -32,6 +33,7 @@ const PlayerMaximize = () => {
       currentMusic,
       currentMusicIndex,
       playlist,
+      artistName
     });
 
     // Sync progress and duration on mount
@@ -205,8 +207,9 @@ const PlayerMaximize = () => {
             {currentMusic?.music_title || "Unknown Song"}
           </Text>
           <Text style={playerMaximizeStyles.artistName}>
-            {currentMusic?.artist || "Unknown Artist"}
-          </Text>
+        {currentMusic?.artist_name  || "Unknown Artist"}
+</Text>
+
         </View>
 
         <View style={playerMaximizeStyles.controlsContainer}>

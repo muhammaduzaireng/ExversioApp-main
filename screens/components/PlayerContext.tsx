@@ -10,7 +10,17 @@ export const PlayerProvider = ({ children }) => {
   const [duration, setDuration] = useState(0); // Music duration
   const [playlist, setPlaylist] = useState([]); // Full playlist
   const [currentMusicIndex, setCurrentMusicIndex] = useState(0); // Current music index
+  const [artistName, setArtistName] = useState("Unknown Artist"); // Current artist name
   const soundRef = useRef(null); // Reference to the sound object
+
+  // Cleanup soundRef on unmount
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.stop(() => soundRef.current.release());
+      }
+    };
+  }, []);
 
   // Update progress every second
   useEffect(() => {
@@ -29,16 +39,12 @@ export const PlayerProvider = ({ children }) => {
     };
   }, [isPlaying]);
 
-  const playMusic = (music, playlistData, index) => {
+  const initializeSound = (fileUrl, onCompletion) => {
     if (soundRef.current) {
       soundRef.current.stop(() => soundRef.current.release());
     }
 
-    setPlaylist(playlistData || []);
-    setCurrentMusicIndex(index);
-    setCurrentMusic(music);
-
-    const sound = new Sound(music.file_url, null, (error) => {
+    const sound = new Sound(fileUrl, null, (error) => {
       if (error) {
         console.error("Error loading sound:", error);
         return;
@@ -49,7 +55,7 @@ export const PlayerProvider = ({ children }) => {
 
       sound.play((success) => {
         if (success) {
-          handleCompletion();
+          onCompletion();
         } else {
           console.error("Playback failed.");
         }
@@ -58,6 +64,20 @@ export const PlayerProvider = ({ children }) => {
 
     soundRef.current = sound;
     setIsPlaying(true);
+  };
+
+  const playMusic = (music, playlistData, index) => {
+    if (!music) {
+      console.error("Music object is undefined.");
+      return;
+    }
+
+    setPlaylist(playlistData || []);
+    setCurrentMusicIndex(index);
+    setCurrentMusic(music);
+    setArtistName(music.artist_name || "Unknown Artist");
+
+    initializeSound(music.file_url, handleCompletion);
   };
 
   const pauseMusic = () => {
@@ -112,6 +132,7 @@ export const PlayerProvider = ({ children }) => {
         soundRef,
         setDuration,
         setCurrentMusic,
+        artistName,
       }}
     >
       {children}
