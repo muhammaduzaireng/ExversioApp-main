@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     bottom: 70,
     left: 0,
     right: 0,
-  
+paddingHorizontal: 20,
     justifyContent: 'space-around',
     paddingVertical: 20,
     borderTopWidth: 1,
