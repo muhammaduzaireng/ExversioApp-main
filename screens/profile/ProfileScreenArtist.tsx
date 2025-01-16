@@ -112,6 +112,61 @@ const ProfileScreen = () => {
       }
     );
   };
+  const handleCoverImageUpload = () => {
+    ImagePicker.launchImageLibrary(
+      { mediaType: 'photo', quality: 0.8 }, // Picker options
+      async (response) => {
+        if (response.didCancel) {
+          console.log('User cancelled image picker');
+        } else if (response.errorCode) {
+          console.error('ImagePicker Error: ', response.errorMessage);
+          Alert.alert('Error', 'Failed to open image picker');
+        } else if (response.assets && response.assets.length > 0) {
+          const selectedImage = response.assets[0];
+          console.log('Selected cover image: ', selectedImage);
+  
+          try {
+            const userId = await AsyncStorage.getItem('userId');
+            if (!userId) {
+              Alert.alert('Error', 'User ID is required');
+              return;
+            }
+  
+            const formData = new FormData();
+            formData.append('userId', userId); // Only include the userId
+            formData.append('coverImage', {
+              uri: selectedImage.uri,
+              type: selectedImage.type || 'image/jpeg',
+              name: selectedImage.fileName || `cover-image-${Date.now()}.jpg`,
+            });
+  
+            console.log('Uploading cover image with data:', formData);
+  
+            const response = await fetch(`${BASE_URL}/updateCoverImage`, {
+              method: 'POST',
+              body: formData,
+            });
+  
+            const data = await response.json();
+            console.log('Response from updateCoverImage:', data);
+  
+            if (data.success) {
+              Alert.alert('Success', 'Cover image updated');
+              setProfileData({
+                ...profileData,
+                coverImage: `${BASE_URL}${data.updatedCoverImage}`,
+              });
+            } else {
+              Alert.alert('Error', data.message || 'Failed to upload cover image');
+            }
+          } catch (error) {
+            console.error('Error uploading cover image:', error);
+            Alert.alert('Error', 'Failed to upload cover image');
+          }
+        }
+      }
+    );
+  };
   
   
 
@@ -129,22 +184,45 @@ const ProfileScreen = () => {
     <View style={profileStyles.mainContainer}>
       <View style={profileStyles.container}>
         <Text style={profileStyles.title}>Profile</Text>
-        <View style={profileStyles.profileHeader}>
-          <TouchableOpacity onPress={handleProfilePictureUpload}>
-            <Image
-              source={
-                profileData.profilePicture
-                  ? { uri: profileData.profilePicture }
-                  : require('../../assets/profile/profile-image.jpg') // Default image
-              }
-              style={profileStyles.avatar}
-            />
-          </TouchableOpacity>
-          <View style={profileStyles.userInfo}>
-            <Text style={profileStyles.userName}>{profileData.name || 'Name'}</Text>
-            <Text style={profileStyles.userEmail}>{profileData.email || 'Email@.com'}</Text>
-          </View>
-        </View>
+        <View style={{ position: 'relative' }}>
+  {/* Cover Image Section */}
+  <Image
+    source={
+      profileData.coverImage
+        ? { uri: profileData.coverImage }
+        : require('../../assets/cover/music.jpg') // Default cover image
+    }
+    style={profileStyles.coverImage}
+  />
+  <TouchableOpacity
+    onPress={handleCoverImageUpload}
+    style={profileStyles.updateCoverIconContainer}
+  >
+    <Image
+      source={require('../../assets/icons/8666681_edit_icon.png')} // Replace with your edit icon
+      style={profileStyles.updateCoverIcon}
+    />
+  </TouchableOpacity>
+
+  {/* Profile Header Section */}
+  <View style={profileStyles.profileHeader}>
+    <TouchableOpacity onPress={handleProfilePictureUpload}>
+      <Image
+        source={
+          profileData.profilePicture
+            ? { uri: profileData.profilePicture }
+            : require('../../assets/profile/profile-image.jpg') // Default profile image
+        }
+        style={profileStyles.avatar}
+      />
+    </TouchableOpacity>
+    <View style={profileStyles.userInfo}>
+      <Text style={profileStyles.userName}>{profileData.name || 'Name'}</Text>
+      <Text style={profileStyles.userEmail}>{profileData.email || 'Email@.com'}</Text>
+    </View>
+  </View>
+</View>
+
         <View style={profileStyles.menuItems}>
           <TouchableOpacity
             style={profileStyles.menuItem}
@@ -203,5 +281,7 @@ const ProfileScreen = () => {
     </View>
   );
 };
+
+
 
 export default ProfileScreen;

@@ -400,7 +400,42 @@ app.post('/updateProfilePicture', upload.single('profilePicture'), async (req, r
 });
 
 
+//For Cover Image
+app.post('/updateCoverImage', upload.single('coverImage'), async (req, res) => {
+  try {
+    console.log('Received cover image update request:', req.body);
+    console.log('Uploaded cover image details:', req.file);
 
+    const { userId } = req.body;
+    const coverImage = req.file ? `/uploads/${req.file.filename}` : null;
+
+    if (!userId || !coverImage) {
+      console.error('Error: User ID and Cover Image are required');
+      return res.status(400).json({ success: false, message: 'User ID and Cover Image are required' });
+    }
+
+    const updateCoverImageQuery = `
+      UPDATE profile
+      SET cover_image = ?
+      WHERE user_id = ?
+    `;
+    console.log('Executing query (updateCoverImageQuery):', updateCoverImageQuery, [coverImage, userId]);
+
+    const [updateResult] = await db.query(updateCoverImageQuery, [coverImage, userId]);
+
+    console.log('updateCoverImageQuery result:', updateResult);
+
+    if (updateResult.affectedRows === 0) {
+      console.warn('No rows updated in profile table. Verify userId exists.');
+      return res.status(400).json({ success: false, message: 'Failed to update cover image. User may not exist.' });
+    }
+
+    return res.status(200).json({ success: true, updatedCoverImage: coverImage });
+  } catch (error) {
+    console.error('Error in /updateCoverImage:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to update cover image.' });
+  }
+});
 
 
 

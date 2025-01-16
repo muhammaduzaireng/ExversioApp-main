@@ -1,78 +1,95 @@
-// styles/profileStyles.ts
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 
 const profileStyles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     backgroundColor: '#1E1E1E',
+    paddingTop: height * 0.05, // Add space on top
   },
   container: {
-    padding: 20,
+    padding: width * 0.05, // Responsive padding
     flex: 1,
   },
   title: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: width * 0.06, // Responsive font size
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: height * 0.02,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: height * 0.03,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 20,
+    width: width * 0.2, // Responsive width
+    height: width * 0.2, // Keep aspect ratio
+    borderRadius: (width * 0.2) / 2, // Circular shape
+    marginRight: width * 0.05,
   },
   userInfo: {
     justifyContent: 'center',
   },
   userName: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: width * 0.05, // Responsive font size
     fontWeight: 'bold',
   },
   userEmail: {
     color: '#aaa',
-    fontSize: 14,
+    fontSize: width * 0.035, // Responsive font size
+  },
+  coverImage: {
+    width: '100%',
+    height: 200,
+    borderBottomLeftRadius: 50,
+    borderBottomRightRadius: 50,
+  },
+  coverImageEditIcon: {
+    position: 'absolute', // Overlay icon on the cover image
+    bottom: height * 0.02, // Positioned at the bottom
+    right: width * 0.05, // Positioned on the right
+    backgroundColor: '#000000aa', // Semi-transparent black background
+    padding: width * 0.02, // Padding around the icon
+    borderRadius: width * 0.05, // Rounded icon background
   },
   menuItems: {
-    marginTop: 20,
+    marginTop: height * 0.02,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: height * 0.02, // Responsive padding
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
   menuIcon: {
-    width: 24,
-    height: 24,
+    width: width * 0.06, // Responsive width
+    height: width * 0.06, // Responsive height
     tintColor: '#fff',
-    marginRight: 15,
+    marginRight: width * 0.04,
   },
   menuText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: width * 0.045, // Responsive font size
   },
   becomeArtistButton: {
-    backgroundColor: '#007AFF', // Blue background
-    padding: 10,
+    backgroundColor: '#007AFF',
+    padding: height * 0.015, // Responsive padding
     borderRadius: 5,
-    width:200,
-    alignItems:'center',
-    marginTop: 10,
+    width: width * 0.5, // Responsive width for the button
+    alignItems: 'center',
+    marginTop: height * 0.02,
+    alignSelf: 'center', // Center the button
   },
   becomeArtistButtonText: {
-    color: '#fff', // White text
-    fontSize: 16,
+    color: '#fff',
+    fontSize: width * 0.045, // Responsive font size
     fontWeight: 'bold',
   },
-
 });
+
 
 export default profileStyles;
