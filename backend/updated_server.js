@@ -194,7 +194,7 @@ app.get('/getUserProfile', async (req, res) => {
   }
 
   const query = `
-    SELECT u.name, u.email, p.profile_picture, p.bio, p.country
+    SELECT u.name, u.email, p.profile_picture, p.bio, p.country, p.cover_image
     FROM users u
     LEFT JOIN profile p ON u.id = p.user_id
     WHERE u.id = ?
@@ -210,6 +210,7 @@ app.get('/getUserProfile', async (req, res) => {
         bio: result[0].bio || '',
         country: result[0].country || '',
         profilePicture: result[0].profile_picture || '/uploads/default.jpg', // Default profile picture
+        coverImage: result[0].cover_image || null,
       };
       return res.status(200).json({ success: true, data: profileData });
     } else {

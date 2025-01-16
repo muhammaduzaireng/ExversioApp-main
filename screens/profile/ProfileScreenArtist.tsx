@@ -184,8 +184,15 @@ const ProfileScreen = () => {
     <View style={profileStyles.mainContainer}>
       <View style={profileStyles.container}>
         <Text style={profileStyles.title}>Profile</Text>
-        <View style={{ position: 'relative' }}>
+        
   {/* Cover Image Section */}
+  
+  
+
+  {/* Profile Header Section */}
+  <View style={profileStyles.headerContainer}>
+  {/* Cover Image */}
+  <TouchableOpacity onPress={handleCoverImageUpload}>
   <Image
     source={
       profileData.coverImage
@@ -194,34 +201,39 @@ const ProfileScreen = () => {
     }
     style={profileStyles.coverImage}
   />
+</TouchableOpacity>
   <TouchableOpacity
-    onPress={handleCoverImageUpload}
-    style={profileStyles.updateCoverIconContainer}
-  >
-    <Image
-      source={require('../../assets/icons/8666681_edit_icon.png')} // Replace with your edit icon
-      style={profileStyles.updateCoverIcon}
-    />
-  </TouchableOpacity>
+  onPress={handleCoverImageUpload}
+  style={profileStyles.updateCoverIconContainer}
+>
+  <Image
+    source={require('../../assets/icons/8666681_edit_icon.png')} // Replace with your edit icon
+    style={profileStyles.updateCoverIcon}
+  />
+</TouchableOpacity>
 
-  {/* Profile Header Section */}
-  <View style={profileStyles.profileHeader}>
-    <TouchableOpacity onPress={handleProfilePictureUpload}>
-      <Image
-        source={
-          profileData.profilePicture
-            ? { uri: profileData.profilePicture }
-            : require('../../assets/profile/profile-image.jpg') // Default profile image
-        }
-        style={profileStyles.avatar}
-      />
-    </TouchableOpacity>
-    <View style={profileStyles.userInfo}>
-      <Text style={profileStyles.userName}>{profileData.name || 'Name'}</Text>
-      <Text style={profileStyles.userEmail}>{profileData.email || 'Email@.com'}</Text>
+  {/* Profile Info */}
+  <View style={profileStyles.artistInfoContainer}>
+    <View style={profileStyles.profileContainer}>
+      <TouchableOpacity onPress={handleProfilePictureUpload}>
+        <Image
+          source={
+            profileData.profilePicture
+              ? { uri: profileData.profilePicture }
+              : require('../../assets/profile/profile-image.jpg') // Default profile image
+          }
+          style={profileStyles.profileImage}
+        />
+      </TouchableOpacity>
     </View>
+    <Text style={profileStyles.artistName}>{profileData.name || 'Name'}</Text>
+    <Text style={profileStyles.artistDescription}>
+      {profileData.email || 'Email@.com'}
+    </Text>
   </View>
 </View>
+
+
 
         <View style={profileStyles.menuItems}>
           <TouchableOpacity

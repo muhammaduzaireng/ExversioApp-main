@@ -18,28 +18,11 @@ const profileStyles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: height * 0.02,
   },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: height * 0.03,
-  },
-  avatar: {
-    width: width * 0.2, // Responsive width
-    height: width * 0.2, // Keep aspect ratio
-    borderRadius: (width * 0.2) / 2, // Circular shape
-    marginRight: width * 0.05,
-  },
-  userInfo: {
-    justifyContent: 'center',
-  },
-  userName: {
+  headerContainer: {
+    position: 'relative',
+
+    paddingBottom: 20,
     color: '#fff',
-    fontSize: width * 0.05, // Responsive font size
-    fontWeight: 'bold',
-  },
-  userEmail: {
-    color: '#aaa',
-    fontSize: width * 0.035, // Responsive font size
   },
   coverImage: {
     width: '100%',
@@ -47,13 +30,34 @@ const profileStyles = StyleSheet.create({
     borderBottomLeftRadius: 50,
     borderBottomRightRadius: 50,
   },
-  coverImageEditIcon: {
-    position: 'absolute', // Overlay icon on the cover image
-    bottom: height * 0.02, // Positioned at the bottom
-    right: width * 0.05, // Positioned on the right
-    backgroundColor: '#000000aa', // Semi-transparent black background
-    padding: width * 0.02, // Padding around the icon
-    borderRadius: width * 0.05, // Rounded icon background
+  artistInfoContainer: {
+    alignItems: 'center',
+    marginTop: -50,
+  },
+  artistName: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  artistDescription: {
+    color: '#ccc',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  profileContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: '#1E1E1E',
+    marginBottom: 10,
+    marginTop: -50, // Adjust to move the profile image up
   },
   menuItems: {
     marginTop: height * 0.02,
