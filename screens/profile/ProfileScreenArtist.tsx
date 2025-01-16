@@ -19,6 +19,7 @@ const ProfileScreen = () => {
     name: '',
     email: '',
     profilePicture: '',
+    coverImage: '',
   });
 
   useEffect(() => {
@@ -36,11 +37,20 @@ const ProfileScreen = () => {
                 ? `${BASE_URL}${data.data.profilePicture}` // Construct full URL for relative paths
                 : data.data.profilePicture || null; // Use absolute URL or set to null if not available
 
+                //cover image
+                const coverPictureUrl =
+                data.data.coverImage && data.data.coverImage.startsWith('/')
+                ? `${BASE_URL}${data.data.coverImage}` // Construct full URL for relative paths
+                : data.data.coverImage || null; // Use absolute URL or set to null if not available
+
+
             setProfileData({
               name: data.data.name,
               email: data.data.email,
               profilePicture: profilePictureUrl,
+              coverImage: coverPictureUrl,
             });
+            console.log('Fetched user profile:', profileData);
           } else {
             Alert.alert('Error', 'Failed to fetch user profile');
           }
@@ -202,15 +212,7 @@ const ProfileScreen = () => {
     style={profileStyles.coverImage}
   />
 </TouchableOpacity>
-  <TouchableOpacity
-  onPress={handleCoverImageUpload}
-  style={profileStyles.updateCoverIconContainer}
->
-  <Image
-    source={require('../../assets/icons/8666681_edit_icon.png')} // Replace with your edit icon
-    style={profileStyles.updateCoverIcon}
-  />
-</TouchableOpacity>
+  
 
   {/* Profile Info */}
   <View style={profileStyles.artistInfoContainer}>
@@ -219,7 +221,7 @@ const ProfileScreen = () => {
         <Image
           source={
             profileData.profilePicture
-              ? { uri: profileData.profilePicture }
+              ? { uri: profileData.profilePicture } 
               : require('../../assets/profile/profile-image.jpg') // Default profile image
           }
           style={profileStyles.profileImage}
