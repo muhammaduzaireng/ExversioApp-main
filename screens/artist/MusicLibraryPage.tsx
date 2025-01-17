@@ -514,6 +514,7 @@ import DocumentPicker from "react-native-document-picker";
 import * as ImagePicker from "react-native-image-picker";
 import axios from "axios";
 import Sound from "react-native-sound";
+import TrackPlayer from 'react-native-track-player';
 
 
 // import ProgressCircle from "react-native-progress-circle";
@@ -544,12 +545,21 @@ const MusicApp = () => {
   const [playbackDuration, setPlaybackDuration] = useState(0);
   const soundRef = useRef(null);
 
- 
+  let isPlayerInitialized = false;
   // Fetch Albums
   const fetchAlbums = async () => {
     try {
       console.log("Fetching albums...");
-      const response = await axios.get(`${BASE_URL}/albums`);
+      const artistId = await AsyncStorage.getItem('artistId');
+
+    if (!artistId) {
+      console.log('No artistId found in AsyncStorage.');
+      return;
+    }
+
+    console.log("Fetching albums for artistId:", artistId);
+
+      const response = await axios.get(`${BASE_URL}/albums?artistId=${artistId}`);
   
       const processedAlbums = response.data.map((album) => ({
         ...album,
@@ -572,17 +582,17 @@ const MusicApp = () => {
     fetchAlbums();
   }, []);
 
-  useEffect(() => {
-    if (soundRef.current) {
-      const interval = setInterval(() => {
-        soundRef.current.getCurrentTime((seconds) => {
-          setPlaybackPosition(seconds);
-        });
-      }, 1000);
+  // useEffect(() => {
+  //   if (soundRef.current) {
+  //     const interval = setInterval(() => {
+  //       soundRef.current.getCurrentTime((seconds) => {
+  //         setPlaybackPosition(seconds);
+  //       });
+  //     }, 1000);
 
-      return () => clearInterval(interval);
-    }
-  }, [currentPlaying]);
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [currentPlaying]);
 
   // Select Image
   const selectImage = async (callback) => {
@@ -706,105 +716,175 @@ const MusicApp = () => {
   
 
   // Play Music
-  const playMusic = (fileUrl) => {
-    // Enforce correct base URL and HTTPS
-    const fullUrl = enforceHttps(fileUrl);
-    // console.log(`Attempting to play music from URL: ${fullUrl}`);
+  // const playMusic = (fileUrl) => {
+  //   // Enforce correct base URL and HTTPS
+  //   const fullUrl = enforceHttps(fileUrl);
+    
+  //   if (currentPlaying && soundRef.current) {
+  //     soundRef.current.stop(() => {
+  //       soundRef.current.release();
+  //     });
+  //   }
   
-    if (currentPlaying && soundRef.current) {
-      soundRef.current.stop(() => {
-        soundRef.current.release();
-      });
+  //   const sound = new Sound(fullUrl, null, (error) => {
+  //     if (error) {
+  //       console.error("Failed to load sound:", error);
+  //       Alert.alert("Error", "Failed to load sound.");
+  //       return;
+  //     }
+  
+  //     setPlaybackDuration(sound.getDuration());
+  
+  //     // Play the sound even in silent mode
+  //     sound.setVolume(1);  // Ensure volume is set to max
+  //     sound.setCategory('Playback');  // Set category to playback
+  //     sound.setPlayInSilentMode(true); // Force audio playback in silent mode
+  //     sound.play(() => {
+  //       sound.release();
+  //       setCurrentPlaying(null);
+  //       setIsPlaying(false);
+  //     });
+  //   });
+  
+  //   soundRef.current = sound;
+  //   setCurrentPlaying(fileUrl);
+  //   setIsPlaying(true);
+  // };
+
+ // Initialize player only once
+// Initialize player only once
+const initializePlayer = async () => {
+  if (!isPlayerInitialized) {
+    try {
+      await TrackPlayer.setupPlayer();
+      isPlayerInitialized = true;
+      console.log("TrackPlayer initialized");
+    } catch (error) {
+      console.error("Failed to initialize TrackPlayer:", error);
     }
-  
-    const sound = new Sound(fullUrl, null, (error) => {
-      if (error) {
-        console.error("Failed to load sound:", error);
-        Alert.alert("Error", "Failed to load sound.");
-        return;
-      }
-      setPlaybackDuration(sound.getDuration());
-      sound.play(() => {
-        sound.release();
-        setCurrentPlaying(null);
-        setIsPlaying(false);
-      });
+  }
+};
+
+const playMusic = async (fileUrl, title = 'Song Title', artist = 'Artist Name') => {
+  try {
+    const fullUrl = enforceHttps(fileUrl);
+
+    // Initialize the player (only once)
+    await initializePlayer();
+
+    // Pause the current track if playing before adding a new one
+    await TrackPlayer.stop(); // Stops the current track and resets the player
+
+    // Reset the player (Optional, but ensures no remnants of the previous track)
+    await TrackPlayer.reset();
+
+    // Add the new track
+    await TrackPlayer.add({
+      id: 'trackId',
+      url: fullUrl,
+      title,
+      artist,
     });
-  
-    soundRef.current = sound;
+
+    // Play the track
+    await TrackPlayer.play();
+
     setCurrentPlaying(fileUrl);
     setIsPlaying(true);
-  };
-  
+  } catch (error) {
+    console.error("Failed to play music:", error);
+    Alert.alert("Error", "Failed to play music.");
+  }
+};
 
-  const pauseMusic = () => {
-    if (soundRef.current) {
-      soundRef.current.pause();
-      setIsPlaying(false);
-    }
+const pauseMusic = async () => {
+  try {
+    // Pause the current track
+    await TrackPlayer.pause();
+    setIsPlaying(false);
+  } catch (error) {
+    console.error("Failed to pause music:", error);
+  }
+};
+
+// Monitoring playback position (Optional for display)
+// Setup event listener for tracking position and duration
+useEffect(() => {
+  const updateProgress = async () => {
+    const position = await TrackPlayer.getPosition();
+    const duration = await TrackPlayer.getDuration();
+    setPlaybackPosition(position);
+    setPlaybackDuration(duration);
   };
+
+  // Set an interval to update position every second while music is playing
+  const interval = setInterval(() => {
+    if (isPlaying) {
+      updateProgress();
+    }
+  }, 1000);
+
+  // Cleanup interval when component is unmounted or music stops
+  return () => clearInterval(interval);
+}, [isPlaying]);
 
   const renderAlbum = ({ item }) => {
     // console.log(`Rendering album: ${item.title}`);
     console.log(`Album cover updated: ${item.cover}`);
     return (
       <View style={styles.albumCard}>
-        {item.cover ? (
-          <Image source={{ uri: item.cover }} style={styles.albumCover} />
-        ) : (
-          <View style={styles.albumCoverPlaceholder}>
-            <Text style={styles.albumCoverText}>{item.title[0]}</Text>
-          </View>
-        )}
-        <Text style={styles.albumTitle}>{item.title}</Text>
-        <FlatList
-          data={item.tracks}
-          keyExtractor={(track) => track.music_id.toString()}
-          renderItem={({ item: track }) => {
-            // console.log(`Rendering track: ${track.file_url}`);
-            return (
-              <View style={styles.trackCard}>
-                <Text style={styles.trackName}>{track.title}</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    currentPlaying === track.file_url && isPlaying
-                      ? pauseMusic()
-                      : playMusic(track.file_url)
-                  }
-                >
-                  <Text style={styles.playButtonText}>
-                    {currentPlaying === track.file_url && isPlaying
-                      ? "Pause"
-                      : "Play"}
-                  </Text>
-                </TouchableOpacity>
-                {currentPlaying === track.file_url && (
-                  <Slider
-                    style={styles.progressBar}
-                    minimumValue={0}
-                    maximumValue={playbackDuration}
-                    value={playbackPosition}
-                    onValueChange={(value) => {
-                      if (soundRef.current) {
-                        soundRef.current.setCurrentTime(value);
-                      }
-                    }}
-                  />
-                )}
-              </View>
-            );
-          }}
-        />
-        <TouchableOpacity
-          style={styles.addMusicButton}
-          onPress={() => {
-            setSelectedAlbumId(item.album_id);
-            setIsMusicModalVisible(true);
-          }}
-        >
-          <Text style={styles.addMusicButtonText}>Add Music</Text>
-        </TouchableOpacity>
-      </View>
+      {item.cover ? (
+        <Image source={{ uri: item.cover }} style={styles.albumCover} />
+      ) : (
+        <View style={styles.albumCoverPlaceholder}>
+          <Text style={styles.albumCoverText}>{item.title[0]}</Text>
+        </View>
+      )}
+      <Text style={styles.albumTitle}>{item.title}</Text>
+      <FlatList
+        data={item.tracks}
+        keyExtractor={(track) => track.music_id.toString()}
+        renderItem={({ item: track }) => {
+          return (
+            <View style={styles.trackCard}>
+              <Text style={styles.trackName}>{track.title}</Text>
+              <TouchableOpacity
+                onPress={() =>
+                  currentPlaying === track.file_url && isPlaying
+                    ? pauseMusic()
+                    : playMusic(track.file_url)
+                }
+              >
+                <Text style={styles.playButtonText}>
+                  {currentPlaying === track.file_url && isPlaying ? "Pause" : "Play"}
+                </Text>
+              </TouchableOpacity>
+
+              {currentPlaying === track.file_url && (
+                <Slider
+                  style={styles.progressBar}
+                  minimumValue={0}
+                  maximumValue={playbackDuration}
+                  value={playbackPosition}
+                  onValueChange={(value) => {
+                    TrackPlayer.seekTo(value);  // Seek to the value when the user interacts with the slider
+                  }}
+                />
+              )}
+            </View>
+          );
+        }}
+      />
+      <TouchableOpacity
+        style={styles.addMusicButton}
+        onPress={() => {
+          setSelectedAlbumId(item.album_id);
+          setIsMusicModalVisible(true);
+        }}
+      >
+        <Text style={styles.addMusicButtonText}>Add Music</Text>
+      </TouchableOpacity>
+    </View>
     );
   };
   

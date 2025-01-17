@@ -21,6 +21,7 @@ const ArtistProfileScreen = () => {
     const [userId, setUserId] = useState(null);
     const [activeCommentPostId, setActiveCommentPostId] = useState(null);
     const [newCommentText, setNewCommentText] = useState(''); // State to track new comment text
+    
 
     // Fetch artistId from server based on userId in AsyncStorage
     useEffect(() => {
@@ -29,6 +30,7 @@ const ArtistProfileScreen = () => {
               const storedUserId = await AsyncStorage.getItem('userId');
               if (storedUserId) {
                   setUserId(parseInt(storedUserId, 10));
+                 
   
                   // Fetch the artist ID and name
                   const response = await fetch(`${BASE_URL}/get-artist-id?userId=${storedUserId}`);
@@ -41,9 +43,16 @@ const ArtistProfileScreen = () => {
                       // Fetch additional artist request details if artist ID is found
                       const responseArtistData = await fetch(`${BASE_URL}/get-artist-request?user_id=${storedUserId}`);
                       const dataArtistData = await responseArtistData.json();
+                      const responseUserProfileData = await fetch(`${BASE_URL}/getUserProfile?user_id=${storedUserId}`);
+                        const dataUserProfileData = await responseUserProfileData.json();
+
+                        if (dataUserProfileData.success) {
+                            setArtistBio(dataUserProfileData.userProfile.bio);
+                        }
+                        console.log('Artist Bio:', dataUserProfileData.userProfile.bio);
   
                       if (dataArtistData.success) {
-                          setArtistBio(dataArtistData.artistRequest.bio);
+                        //   setArtistBio(dataArtistData.artistRequest.bio);
                           setArtistSubscriptionPrice(dataArtistData.artistRequest.subscriptionPrice);
                       } else {
                           console.warn('No artist request found for this user');
@@ -58,6 +67,7 @@ const ArtistProfileScreen = () => {
               Alert.alert('Error', 'Failed to fetch artist details');
           }
       };
+      
   
       fetchArtistIdAndUserId();
   }, []);

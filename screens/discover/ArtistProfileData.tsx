@@ -34,6 +34,7 @@ const ArtistProfileData = () => {
     const [passedArtistId, setPassedArtistId] = useState(null);
     const [selectedTab, setSelectedTab] = useState('All'); 
     const [artistProfilePicture, setArtistProfilePicture] = useState(null);
+    const [coverImage, setCoverImage] = useState(null);
     const [artists, setArtists] = useState<Artist[]>([]);
 
    console.log('User ID:', user_id);
@@ -84,7 +85,14 @@ const ArtistProfileData = () => {
                 // Fetch artist ID and name based on user_id
                 const response = await fetch(`${BASE_URL}/get-artist-id?userId=${user_id}`);
                 const data = await response.json();
-    
+                const responseUserProfileData = await fetch(`${BASE_URL}/getUserProfile?userId=${user_id}`);
+                        const dataUserProfileData = await responseUserProfileData.json();
+                        if(dataUserProfileData.success){    
+                        setArtistBio(dataUserProfileData.data.bio);
+                        setCoverImage(`${BASE_URL}${dataUserProfileData.data.coverImage}`);
+
+                        }
+                        
                 if (data.success) {
                     setArtistId(data.artistId);
                     setArtistNames(data.artistNames);
@@ -102,7 +110,7 @@ const ArtistProfileData = () => {
                     const dataArtistData = await responseArtistData.json();
     
                     if (dataArtistData.success) {
-                        setArtistBio(dataArtistData.artistRequest.bio);
+                        // setArtistBio(dataArtistData.artistRequest.bio);
                         setArtistSubscriptionPrice(dataArtistData.artistRequest.subscriptionPrice);
                     } else {
                         console.warn("No artist request found for this user");
@@ -297,9 +305,14 @@ const ArtistProfileData = () => {
                 <View style={artistProfileStyles.headerContainer}>
                     {/* Cover Image */}
                     <Image
-                        source={require('../../assets/profile/profile-image.jpg')}
-                        style={artistProfileStyles.coverImage}
-                    />
+    source={
+        coverImage
+            ? { uri: coverImage } // Use the state variable if it exists
+            : require('../../assets/profile/profile-image.jpg') // Fallback to default
+    }
+    style={artistProfileStyles.coverImage}
+/>
+
                     
                     {/* Artist Info */}
                     <View style={artistProfileStyles.artistInfoContainer}>

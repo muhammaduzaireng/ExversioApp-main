@@ -262,17 +262,14 @@ const ArtistPostScreen = () => {
             const data = await response.json();
     
             if (data.success) {
-                // Toggle the like status and count
                 setPosts((prevPosts) =>
                     prevPosts.map((post) =>
                         post.id === postId
                             ? {
-                                ...post,
-                                isLiked: !post.isLiked, // Toggle like status
-                                like_count: post.isLiked
-                                    ? post.like_count - 1 // Decrease count if unliked
-                                    : post.like_count + 1, // Increase count if liked
-                            }
+                                  ...post,
+                                  isLiked: !post.isLiked,
+                                  like_count: post.isLiked ? post.like_count - 1 : post.like_count + 1,
+                              }
                             : post
                     )
                 );
@@ -402,8 +399,15 @@ const ArtistPostScreen = () => {
                             />
                         </View>
                         <Text style={dashboardStyles.timestamp}>
-                            {new Date(item.timestamp).toLocaleString()}
-                        </Text>
+  {new Date(item.created_at).toLocaleString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })}
+</Text>
                     </View>
                 </View>
     
