@@ -1565,15 +1565,72 @@ app.post("/add-music", upload.fields([{ name: "file" }, { name: "cover" }]), asy
 
 
 // API to Fetch Albums with Their Music
+// app.get("/albums", async (req, res) => {
+//   try {
+//     const [albums] = await db.query(`
+//       SELECT a.album_id, a.title AS album_title, a.cover_url AS album_cover, m.music_id, 
+//              m.title AS music_title, m.type, m.file_url, m.cover_url AS music_cover
+//       FROM albums a
+//       LEFT JOIN albummusic m ON a.album_id = m.album_id
+//       ORDER BY a.created_at DESC
+//     `);
+
+//     const groupedAlbums = albums.reduce((acc, item) => {
+//       const album = acc.find((a) => a.album_id === item.album_id);
+//       if (album) {
+//         album.tracks.push({
+//           music_id: item.music_id,
+//           title: item.music_title,
+//           type: item.type,
+//           file_url: `${req.protocol}://${req.get("host")}${item.file_url}`, // Dynamically add base URL
+//           cover: item.music_cover ? `${req.protocol}://${req.get("host")}${item.music_cover}` : null,
+//         });
+//       } else {
+//         acc.push({
+//           album_id: item.album_id,
+//           title: item.album_title,
+//           cover: item.album_cover ? `${req.protocol}://${req.get("host")}${item.album_cover}` : null,
+//           tracks: item.music_id
+//             ? [
+//                 {
+//                   music_id: item.music_id,
+//                   title: item.music_title,
+//                   type: item.type,
+//                   file_url: `${req.protocol}://${req.get("host")}${item.file_url}`,
+//                   cover: item.music_cover
+//                     ? `${req.protocol}://${req.get("host")}${item.music_cover}`
+//                     : null,
+//                 },
+//               ]
+//             : [],
+//         });
+//       }
+//       return acc;
+//     }, []);
+
+//     res.status(200).json(groupedAlbums);
+//   } catch (error) {
+//     console.error("Database Error:", error);
+//     res.status(500).json({ message: "Failed to fetch albums" });
+//   }
+// });
 app.get("/albums", async (req, res) => {
+  const { artistId } = req.query;
+
+  // Check if artistId is provided in the query
+  if (!artistId) {
+    return res.status(400).json({ message: "artistId is required" });
+  }
+
   try {
     const [albums] = await db.query(`
       SELECT a.album_id, a.title AS album_title, a.cover_url AS album_cover, m.music_id, 
              m.title AS music_title, m.type, m.file_url, m.cover_url AS music_cover
       FROM albums a
       LEFT JOIN albummusic m ON a.album_id = m.album_id
+      WHERE a.artist_id = ?
       ORDER BY a.created_at DESC
-    `);
+    `, [artistId]); // Use the artistId parameter in the query
 
     const groupedAlbums = albums.reduce((acc, item) => {
       const album = acc.find((a) => a.album_id === item.album_id);
@@ -1614,6 +1671,7 @@ app.get("/albums", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch albums" });
   }
 });
+
 
 // Route to fetch albums and their music by artist_id
 app.get("/get-artist-albums", async (req, res) => {
