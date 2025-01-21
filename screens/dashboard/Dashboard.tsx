@@ -4,14 +4,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import dashboardStyles from '../../styles/dashboardStyles'; // Ensure this path is correct
 import artistPostStyles from '../../styles/artist/artistPostStyles';
 import NavigationBar from '../components/NavigationBar';
+import { useNavigation } from '@react-navigation/native';
+import ProfileScreen from '../profile/ProfileScreen';
+import DiscoverScreen from '../discover/DiscoverScreen';
+import LibraryScreen from '../library/LibraryScreen';
 
-const DashboardScreen = ({ navigation }) => {
+const DashboardScreen = () => {
+    const navigation = useNavigation();
     const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
 
     const [posts, setPosts] = useState([]);
     const [savedUserId, setSavedUserId] = useState(null);
     const [activeCommentPostId, setActiveCommentPostId] = useState(null);
     const [newCommentText, setNewCommentText] = useState('');
+    const [selectedScreen, setSelectedScreen] = useState<'DashboardScreen' | 'DiscoverScreen' | 'LibraryScreen' | 'ProfileScreen'>('DashboardScreen');
 
     // Fetch user ID from AsyncStorage
     useEffect(() => {
@@ -138,6 +144,33 @@ const DashboardScreen = ({ navigation }) => {
             Alert.alert('Error', 'Failed to add comment. Please try again.');
         }
     };
+    const handleNavigationClick = (screen: 'DashboardScreen' | 'DiscoverScreen' | 'LibraryScreen' | 'ProfileScreen') => {
+        setSelectedScreen(screen); // Update the selected screen
+      };
+
+    // Render dynamic content based on selectedComponent (optional)
+    const renderContent = () => {
+        switch (selectedScreen) {
+          case 'DiscoverScreen':
+            return <DiscoverScreen />;
+          case 'LibraryScreen':
+            return <LibraryScreen />;
+          case 'ProfileScreen':
+            return <ProfileScreen />;
+          case 'DashboardScreen':
+          default:
+            return <View style={dashboardStyles.container}>
+            
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderPost}
+                contentContainerStyle={dashboardStyles.feedContainer}
+            />
+          
+        </View> // Replace with your actual Dashboard content
+        }
+      };
 
     const renderPost = ({ item }) => {
         console.log('Rendering post:', {
@@ -260,13 +293,9 @@ const DashboardScreen = ({ navigation }) => {
 
     return (
         <View style={dashboardStyles.container}>
-            <FlatList
-                data={posts}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderPost}
-                contentContainerStyle={dashboardStyles.feedContainer}
-            />
-            <NavigationBar />
+            {renderContent()}
+            
+            <NavigationBar selectedScreen={selectedScreen} onNavigationClick={handleNavigationClick} />
         </View>
     );
 };
