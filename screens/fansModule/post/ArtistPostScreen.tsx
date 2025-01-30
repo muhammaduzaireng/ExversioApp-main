@@ -8,6 +8,12 @@ import DocumentPicker from 'react-native-document-picker';
 import ArtistNavigationBar from '../../components/ArtistNavigationBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Sound from 'react-native-sound';
+import DiscoverScreenForArtist from '../../discover/DiscoverScreen';
+import MusicLibraryPage from '../../artist/MusicLibraryPage';
+import ProfileScreenArtist from '../../profile/ProfileScreenArtist';
+import CreatePost from '../../components/CreatePost';
+import Header from '../../components/Header';
+
 
 const ArtistPostScreen = () => {
     const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
@@ -27,6 +33,8 @@ const ArtistPostScreen = () => {
     const [currentPlaying, setCurrentPlaying] = useState(null);
       const soundRef = useRef(null);
       const [refreshing, setRefreshing] = useState(false); // Track pull-to-refresh state
+      const [selectedTab, setSelectedTab] = useState<'All' | 'Music' | 'Videos' | 'Pictures'>('All');
+      const [selectedScreen, setSelectedScreen] = useState<'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost'>('ArtistPostScreen');
     // Fetch artistId from server based on userId in AsyncStorage
     useEffect(() => {
         const fetchArtistIdAndUserId = async () => {
@@ -364,7 +372,36 @@ const ArtistPostScreen = () => {
         await fetchPosts(); // Reload posts
         setRefreshing(false); // End refreshing state
     };
-
+    const handleNavigationClick = (screen: 'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost') => {
+        setSelectedScreen(screen); // Update the selected screen
+      };
+      const renderContent = () => {
+        switch (selectedScreen) {
+          
+          case 'DiscoverScreenForArtist':
+            return <DiscoverScreenForArtist />;
+          case 'MusicLibraryPage':
+            return <MusicLibraryPage />;
+          case 'ProfileScreenArtist':
+            return <ProfileScreenArtist />;
+            case 'CreatePost':
+            return <CreatePost />;
+            case 'ArtistPostScreen':
+          default:
+            return <View style={dashboardStyles.container}>
+                <Header selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+                <FlatList
+                    data={posts || []}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={renderPost}
+                    contentContainerStyle={dashboardStyles.contentContainer}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                />
+            </View>;
+        }
+        };
       const renderPost = ({ item }) => {
         // Enforce HTTPS for media_url
         const mediaUrl = item.media_url?.startsWith('http://')
@@ -496,22 +533,14 @@ const ArtistPostScreen = () => {
     
 
     return (
-        <View style={{ flex: 1, justifyContent: 'space-between', backgroundColor: '#1E1E1E' }}>
+       
             <View style={artistPostStyles.container}>
-                
+            {renderContent()}
 
-                <FlatList
-                    data={posts || []}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={renderPost}
-                    contentContainerStyle={artistPostStyles.feedContainer}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                />
+            <ArtistNavigationBar selectedScreen={selectedScreen} onNavigationClick={handleNavigationClick} />
             </View>
-            <ArtistNavigationBar />
-        </View>
+           
+       
     );
 };
 

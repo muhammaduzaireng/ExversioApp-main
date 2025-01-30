@@ -44,7 +44,7 @@ const dashboardStyles = StyleSheet.create({
     fontSize: 16,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingBottom: 20,
   },
   postContainer: {

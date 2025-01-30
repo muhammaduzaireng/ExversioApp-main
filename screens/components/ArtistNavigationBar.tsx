@@ -1,19 +1,31 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Image, Modal, StyleSheet } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import CreatePost from './CreatePost'; // Import the CreatePost component
 import dashboardStyles from '../../styles/dashboardStyles';
 import discoverStyles from '../../styles/discoverStyles';
-import CreatePost from './CreatePost'; // Import the CreatePost component
 
-const ArtistNavigationBar = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const [isPostModalVisible, setIsPostModalVisible] = useState(false);
+interface NavigationBarProps {
+  selectedScreen: 'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost'; // Selected screen passed as a prop
+  onNavigationClick: (
+    screen: 'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost'
+  ) => void; // Callback function
+}
 
-  const getIconStyle = (screenName) => {
-    return route.name === screenName
-      ? [discoverStyles.footerIcon, { tintColor: '#2EF3DD' }]
-      : discoverStyles.footerIcon;
+const ArtistNavigationBar = ({ selectedScreen, onNavigationClick }: NavigationBarProps) => {
+  const [isCreatePostVisible, setCreatePostVisible] = useState(false);
+
+  const getIconStyle = (screenName: string) => {
+    return selectedScreen === screenName
+      ? [discoverStyles.footerIcon, { tintColor: '#2EF3DD' }] // Color for the selected icon
+      : discoverStyles.footerIcon; // Default color for non-selected icons
+  };
+
+  const handleCreatePostClick = () => {
+    setCreatePostVisible(true);
+  };
+
+  const handleCloseCreatePost = () => {
+    setCreatePostVisible(false);
   };
 
   return (
@@ -21,7 +33,7 @@ const ArtistNavigationBar = () => {
       {/* First Button */}
       <TouchableOpacity
         style={styles.footerButton}
-        onPress={() => navigation.navigate('ArtistPostScreen')}
+        onPress={() => onNavigationClick('ArtistPostScreen')}
       >
         <Image
           source={require('../../assets/icons/9004706_house_home_property_estate_building_icon.png')}
@@ -32,18 +44,18 @@ const ArtistNavigationBar = () => {
       {/* Second Button */}
       <TouchableOpacity
         style={styles.footerButton}
-        onPress={() => navigation.navigate('DiscoverScreenForArtist')}
+        onPress={() => onNavigationClick('DiscoverScreenForArtist')}
       >
         <Image
           source={require('../../assets/icons/icons.png')}
-          style={getIconStyle('DiscoverScreen')}
+          style={getIconStyle('DiscoverScreenForArtist')}
         />
       </TouchableOpacity>
 
       {/* Centered "+" Button */}
       <TouchableOpacity
         style={styles.centerButton}
-        onPress={() => setIsPostModalVisible(true)}
+        onPress={()=> onNavigationClick('CreatePost')}
       >
         <Image
           source={require('../../assets/icons/134224_add_plus_new_icon.png')} // Replace with your plus icon path
@@ -54,7 +66,7 @@ const ArtistNavigationBar = () => {
       {/* Third Button */}
       <TouchableOpacity
         style={styles.footerButton}
-        onPress={() => navigation.navigate('MusicLibraryPage')}
+        onPress={() => onNavigationClick('MusicLibraryPage')}
       >
         <Image
           source={require('../../assets/icons/3669472_music_library_ic_icon.png')}
@@ -65,26 +77,14 @@ const ArtistNavigationBar = () => {
       {/* Fourth Button */}
       <TouchableOpacity
         style={styles.footerButton}
-        onPress={() => navigation.navigate('ProfileScreenArtist')}
+        onPress={() => onNavigationClick('ProfileScreenArtist')}
       >
         <Image
           source={require('../../assets/icons/370076_account_avatar_client_male_person_icon.png')}
-          style={getIconStyle('ProfileScreen')}
+          style={getIconStyle('ProfileScreenArtist')}
         />
       </TouchableOpacity>
 
-      {/* Modal for Create Post */}
-      <Modal
-        visible={isPostModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsPostModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <CreatePost onClose={() => setIsPostModalVisible(false)} />
-        </View>
-      </Modal>
-      
     </View>
   );
 };
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1E1E1E',
     height: 70,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   footerButton: {
     flex: 1,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.6)', // Dimmed background
-},
+  },
 });
 
 export default ArtistNavigationBar;

@@ -130,7 +130,7 @@ const DiscoverScreen = () => {
         setPlaying={setIsPlaying}
         soundRef={soundRef}
       />
-      <ArtistNavigationBar />
+      
     </View>
   );
 };

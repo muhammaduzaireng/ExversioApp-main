@@ -291,7 +291,6 @@ const ProfileScreen = () => {
         </View>
       </View>
       <Player />
-      <ArtistNavigationBar />
     </View>
   );
 };

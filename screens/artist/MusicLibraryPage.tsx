@@ -968,7 +968,7 @@ useEffect(() => {
           </TouchableOpacity>
         </View>
       </Modal>
-      <ArtistNavigationBar />
+     
     </View>
     
   );

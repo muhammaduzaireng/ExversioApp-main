@@ -296,7 +296,7 @@ const ArtistProfileScreen = () => {
         renderItem={renderPost}
       />
       <Player />
-      <NavigationBar />
+     
     </View>
   );
 };
