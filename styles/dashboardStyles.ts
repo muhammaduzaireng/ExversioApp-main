@@ -50,7 +50,7 @@ const dashboardStyles = StyleSheet.create({
   postContainer: {
     backgroundColor: '#2e2e2e',
     borderRadius: 10,
-    padding: 15,
+    padding: 20,
     marginBottom: 20,
   },
   actionIconsContainer: {

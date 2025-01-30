@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import ProfileScreen from '../profile/ProfileScreen';
 import DiscoverScreen from '../discover/DiscoverScreen';
 import LibraryScreen from '../library/LibraryScreen';
+import Header from '../components/Header';
 
 const DashboardScreen = () => {
     const navigation = useNavigation();
@@ -18,6 +19,7 @@ const DashboardScreen = () => {
     const [activeCommentPostId, setActiveCommentPostId] = useState(null);
     const [newCommentText, setNewCommentText] = useState('');
     const [selectedScreen, setSelectedScreen] = useState<'DashboardScreen' | 'DiscoverScreen' | 'LibraryScreen' | 'ProfileScreen'>('DashboardScreen');
+    const [selectedTab, setSelectedTab] = useState('All');
 
     // Fetch user ID from AsyncStorage
     useEffect(() => {
@@ -160,6 +162,7 @@ const DashboardScreen = () => {
           case 'DashboardScreen':
           default:
             return <View style={dashboardStyles.container}>
+                <Header selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             
             <FlatList
                 data={posts}

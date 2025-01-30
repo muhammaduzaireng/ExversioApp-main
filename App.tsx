@@ -117,24 +117,28 @@
 
 // export default App;
 // App.tsx
-import React from 'react';
+import React, { useEffect } from 'react'; // Import useEffect
 import MainStackNavigator from './navigation/MainStackNavigator';
 import { StripeProvider } from '@stripe/stripe-react-native';
-import { PlayerProvider }  from './screens/components/PlayerContext';
-import Player from './screens/components/Player';
+import { PlayerProvider } from './screens/components/PlayerContext';
+import TrackPlayerSetup from './screens/player/trackPlayerSetup'; // Import TrackPlayerSetup
 
 const App = () => {
+  // Initialize TrackPlayer when the app starts
+  useEffect(() => {
+    TrackPlayerSetup(); // Call TrackPlayerSetup
+  }, []);
+
   return (
     <PlayerProvider>
-    <StripeProvider 
-    publishableKey="pk_live_51QAsW0JWonOOC6wojMwqo0uHlTfAr7dRwGKTV2rr48yy6EZniU8d3ML5IuKkihfD2ukZFX40TOUK1sRjpzDqa37d00Ncul3Dsr"
-    merchantIdentifier="merchant.exversioapp.com">
-      <MainStackNavigator />
-    </StripeProvider>
+      <StripeProvider
+        publishableKey="pk_live_51QAsW0JWonOOC6wojMwqo0uHlTfAr7dRwGKTV2rr48yy6EZniU8d3ML5IuKkihfD2ukZFX40TOUK1sRjpzDqa37d00Ncul3Dsr"
+        merchantIdentifier="merchant.exversioapp.com"
+      >
+        <MainStackNavigator />
+      </StripeProvider>
     </PlayerProvider>
-  )
-  
-   
+  );
 };
 
 export default App;

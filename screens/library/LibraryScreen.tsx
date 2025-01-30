@@ -243,7 +243,7 @@ const LibraryScreen = () => {
       {/* Player and Navigation */}
       
         <Player />
-        <NavigationBar />
+       
       </View>
     
   );
