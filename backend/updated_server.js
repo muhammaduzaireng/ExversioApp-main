@@ -721,13 +721,11 @@ app.post('/upload-media', upload.single('file'), (req, res) => {
 
 // Endpoint to create a new post
 app.post('/create-post', async (req, res) => {
-  const { artistId, content, mediaUrl, mediaType } = req.body;
+  const { artistId, content, mediaUrl, mediaType, musicTitle } = req.body;
 
-  // Log received artistId
   console.log("Received artistId for post creation:", artistId);
 
   try {
-    // Check if artistId exists in the approved_artists table
     const query = 'SELECT * FROM approved_artists WHERE artist_id = ?';
     const [results] = await db.query(query, [artistId]);
 
@@ -736,9 +734,19 @@ app.post('/create-post', async (req, res) => {
       return res.status(403).json({ success: false, message: 'User is not an approved artist' });
     }
 
-    // Proceed with post creation if the artist is approved
-    const insertQuery = 'INSERT INTO posts (artist_id, content, media_url, media_type, music_title) VALUES (?, ?, ?, ?, ?)';
-    const [insertResult] = await db.query(insertQuery, [artistId, content, mediaUrl, mediaType]);
+    // Insert the post, including music_title
+    const insertQuery = `
+      INSERT INTO posts (artist_id, content, media_url, media_type, music_title) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    const [insertResult] = await db.query(insertQuery, [
+      artistId,
+      content,
+      mediaUrl,
+      mediaType,
+      musicTitle || null // Fix: Ensure music_title is inserted
+    ]);
 
     console.log('Post created successfully with ID:', insertResult.insertId);
     return res.status(201).json({ success: true, message: 'Post created successfully', postId: insertResult.insertId });
@@ -748,6 +756,7 @@ app.post('/create-post', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to create post' });
   }
 });
+
 
 
 
