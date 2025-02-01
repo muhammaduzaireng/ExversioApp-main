@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     headerContainer: {
       alignItems: 'center',
       paddingVertical: 10,
-      backgroundColor: '#333', // Adjust as needed
+      backgroundColor: '#1E1E1E', // Adjust as needed
     },
     logoContainer: {
       marginBottom: 10,
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
       flexDirection: 'row',
       justifyContent: 'space-around',
       width: '100%',
-      backgroundColor: '#3d3d3d', // Adjust as needed
+      backgroundColor: '#1E1E1E', // Adjust as needed
       padding: 10,
     },
     tabButton: {

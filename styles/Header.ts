@@ -3,7 +3,7 @@ const styles = StyleSheet.create({
     headerContainer: {
       alignItems: 'center',
       paddingVertical: 10,
-      backgroundColor: '#fff', // Adjust as needed
+      backgroundColor: '#1E1E1E', // Adjust as needed
     },
     logoContainer: {
       marginBottom: 10,

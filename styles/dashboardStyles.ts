@@ -100,6 +100,7 @@ const dashboardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom:10,
+    marginTop:10,
   },
   likeCount: {
     color: '#fff',
@@ -246,7 +247,91 @@ noCommentsText:{
     color: '#fff',
     fontSize: 14,
     marginTop: 10,
-}
+},
+trackContainer: {
+  padding: 8,
+  marginVertical: 4,
+  borderRadius: 8,
+  backgroundColor: "#1C1C1E",
+  flexDirection: "column",
+},
+row: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+trackAvatar: {
+  width: 40, // Smaller size
+  height: 40,
+  borderRadius: 4,
+},
+info: {
+  flex: 1,
+  marginLeft: 10,
+},
+trackTitle: {
+  color: "#FFF",
+  fontSize: 14,
+  fontWeight: "bold",
+},
+trackArtist: {
+  color: "#888",
+  fontSize: 12,
+},
+playIcon: {
+  width: 16,
+  height: 18,
+  marginHorizontal: 8,
+},
+maximizeIcon: {
+  width: 20,
+  height: 20,
+},
+
+progressBarWrapper: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  width: '100%',
+  position: 'relative',
+  
+},
+progressTime: {
+  flexDirection: "row", // Change to row to align children horizontally
+  justifyContent: "space-between", // Space children to the left and right edges
+  alignItems: "center", // Align children vertically in the center (optional)
+},
+time: {
+  fontSize: 12,
+  color: '#FFF',
+  alignSelf: 'flex-start', // Align to the left
+  marginTop: 5,
+},
+timeRight: {
+  fontSize: 12,
+  color: '#FFF',
+  alignSelf: 'flex-end', // Align to the right
+  marginTop: 5,
+},
+slider: {
+  flex: 1,
+  height: 40,
+  marginLeft: 35, // Adjust this margin to position the slider correctly
+},
+progress: {
+  flex: 1,
+  height: 3,
+  backgroundColor: "#444",
+  borderRadius: 2,
+  marginHorizontal: 5,
+},
+progressFill: {
+  height: 3,
+  backgroundColor: "#2EF3DD",
+  borderRadius: 2,
+},
+pauseIcon: {
+  width: 20,
+  height: 20,
+},
 });
 
 export default dashboardStyles;

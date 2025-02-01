@@ -195,6 +195,7 @@ const ArtistAlbums = ({ artistId, profilePicture }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState(null);
   const playbackState = usePlaybackState();
+  
   const progress = useProgress();
 
   useEffect(() => {

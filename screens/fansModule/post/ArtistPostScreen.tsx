@@ -13,6 +13,10 @@ import MusicLibraryPage from '../../artist/MusicLibraryPage';
 import ProfileScreenArtist from '../../profile/ProfileScreenArtist';
 import CreatePost from '../../components/CreatePost';
 import Header from '../../components/Header';
+import TrackPlayer, { usePlaybackState, State as TrackPlayerState, useProgress } from "react-native-track-player";
+import trackPlayerSetup from "../../player/trackPlayerSetup";
+import Slider from "@react-native-community/slider";
+import { formatTime } from '../../components/Utils'; // Import the formatTime function
 
 
 const ArtistPostScreen = () => {
@@ -35,6 +39,7 @@ const ArtistPostScreen = () => {
       const [refreshing, setRefreshing] = useState(false); // Track pull-to-refresh state
       const [selectedTab, setSelectedTab] = useState<'All' | 'Music' | 'Videos' | 'Pictures'>('All');
       const [selectedScreen, setSelectedScreen] = useState<'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost'>('ArtistPostScreen');
+       const progress = useProgress();
     // Fetch artistId from server based on userId in AsyncStorage
     useEffect(() => {
         const fetchArtistIdAndUserId = async () => {
@@ -289,81 +294,53 @@ const ArtistPostScreen = () => {
             Alert.alert('Error', 'Failed to like post. Please try again.');
         }
     };
-    useEffect(() => {
-        if (soundRef.current) {
-          console.log("Setting up interval to track playback position");
-          const interval = setInterval(() => {
-            soundRef.current.getCurrentTime((seconds) => {
-              console.log("Current playback position:", seconds);
-              setPlaybackPosition(seconds);
-            });
-          }, 1000);
-          return () => {
-            console.log("Clearing interval");
-            clearInterval(interval);
-          };
-        }
-      }, [currentPlaying]);
-      
-      const playMusic = (fileUrl) => {
-        console.log("Attempting to play music:", fileUrl);
-      
-        const completeUrl = fileUrl.startsWith("http")
-          ? fileUrl
-          : `${BASE_URL}${fileUrl}`;
-        console.log("Formatted URL for playback:", completeUrl);
-      
-        // Stop and release the current playing sound
-        if (currentPlaying && soundRef.current) {
-          console.log("Stopping current sound...");
-          soundRef.current.stop(() => {
-            console.log("Current sound stopped");
-            soundRef.current.release();
-            console.log("Current sound released");
-          });
-        }
-      
-        // Initialize the new sound
-        console.log("Initializing new sound...");
-        const sound = new Sound(completeUrl, null, (error) => {
-          if (error) {
-            console.error("file during sound initialization:", completeUrl);
-            console.error("Error during sound initialization:", error);
-            Alert.alert("Error", "Failed to load sound.");
-            return;
-          }
-          console.log("Sound loaded successfully. Duration:", sound.getDuration());
-      
-          setPlaybackDuration(sound.getDuration());
-      
-          sound.play(() => {
-            console.log("Playback finished");
-            sound.release();
-            console.log("Sound released after playback");
-            setCurrentPlaying(null);
-            setIsPlaying(false);
-          });
-      
-          console.log("Started playback for:", completeUrl);
-        });
-      
-        soundRef.current = sound;
-        setCurrentPlaying(fileUrl);
-        setIsPlaying(true);
-        console.log("Playback state updated: Playing");
-      };
-      
-      const pauseMusic = () => {
-        console.log("Attempting to pause music...");
-        if (soundRef.current) {
-          soundRef.current.pause(() => {
-            console.log("Music paused successfully");
-            setIsPlaying(false);
-          });
-        } else {
-          console.log("No active sound to pause");
-        }
-      };
+     const playMusic = async (fileUrl) => {
+           const completeUrl = fileUrl.startsWith("http") ? fileUrl : `${BASE_URL}${fileUrl}`;
+           console.log("Playing music from URL:", completeUrl);
+         
+           try {
+             if (currentPlaying === completeUrl) {
+               // If the same track is clicked again, toggle play/pause
+               if (isPlaying) {
+                 await TrackPlayer.pause();
+                 setIsPlaying(false);
+               } else {
+                 await TrackPlayer.play();
+                 setIsPlaying(true);
+               }
+             } else {
+               // Play new track
+               await TrackPlayer.reset();
+               await TrackPlayer.add({
+                 id: completeUrl, // Use completeUrl as the unique ID
+                 url: completeUrl,
+                 title: 'Track Title',
+                 artist: 'Artist Name',
+                 artwork: 'https://placekitten.com/300/300',
+               });
+               await TrackPlayer.play();
+               setIsPlaying(true);
+               setCurrentPlaying(completeUrl); // Correct reference
+             }
+           } catch (error) {
+             console.error("Error playing music:", error);
+             Alert.alert("Error", "Failed to play music.");
+           }
+         };
+         
+         const pauseMusic = async () => {
+           try {
+             await TrackPlayer.pause();
+             setIsPlaying(false);
+           } catch (error) {
+             console.error("Error pausing music:", error);
+             Alert.alert("Error", "Failed to pause music.");
+           }
+         };
+         
+         const handleSliderChange = async (value) => {
+           await TrackPlayer.seekTo(value);
+         };
       
     
       const onRefresh = async () => {
@@ -407,6 +384,11 @@ const ArtistPostScreen = () => {
         const mediaUrl = item.media_url?.startsWith('http://')
             ? item.media_url.replace('http://', 'https://')
             : item.media_url;
+            const completeUrl = item.media_url 
+            ? (item.media_url.startsWith("http") ? item.media_url : `${BASE_URL}${item.media_url}`) 
+            : null;
+          const isPlayingCurrent = currentPlaying === completeUrl && isPlaying;
+        
     
         return (
             <View style={dashboardStyles.postContainer}>
@@ -451,27 +433,49 @@ const ArtistPostScreen = () => {
                 {/* Post Content */}
                 <Text style={dashboardStyles.postText}>{item.content}</Text>
     
+                
                 {/* Media Display */}
-                {mediaUrl && item.media_type === 'image' && (
-                    <Image source={{ uri: mediaUrl }} style={artistPostStyles.postMedia} />
-                )}
-                {mediaUrl && item.media_type === 'audio' && (
-                    <View style={artistPostStyles.audioContainer}>
-                        <TouchableOpacity onPress={() => playMusic(mediaUrl, item.id)}>
-                            <Image
-                                source={
-                                    activeAudioId === item.id && isPlaying
-                                        ? require('../../../assets/icons/icons8-pause-90.png')
-                                        : require('../../../assets/icons/211876_play_icon.png')
-                                }
-                                style={artistPostStyles.audioControl}
-                            />
-                        </TouchableOpacity>
-                        <Text style={artistPostStyles.audioLabel}>
-                            {mediaUrl.split('/').pop()} {/* Display file name */}
-                        </Text>
-                    </View>
-                )}
+            {completeUrl && item.media_type === 'image' && <Image source={{ uri: completeUrl }} style={artistPostStyles.postMedia} />}
+      
+      {completeUrl && item.media_type === 'audio' && (
+        <View style={dashboardStyles.trackContainer}>
+          <View style={dashboardStyles.row}>
+            <Image source={profilePicture ? { uri: profilePicture } : require("../../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
+            <View style={dashboardStyles.info}>
+              <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.track_title || 'Unknown Track'}</Text>
+            </View>
+            <TouchableOpacity onPress={() => playMusic(completeUrl)}>
+              <Image
+                source={isPlayingCurrent ? require("../../../assets/icons/icons8-pause-90.png") : require("../../../assets/icons/211876_play_icon.png")}
+                style={dashboardStyles.playIcon}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Progress Bar */}
+          {isPlayingCurrent && (
+            <View style={dashboardStyles.progressBarContainer}>
+              
+              <Slider
+                style={dashboardStyles.slider}
+                minimumValue={0}
+                maximumValue={progress.duration}
+                value={progress.position}
+                onSlidingComplete={handleSliderChange}
+                minimumTrackTintColor="#2EF3DD"
+                maximumTrackTintColor="#999"
+                thumbTintColor="#2EF3DD"
+              />
+              <View style={dashboardStyles.progressTime}>
+              <Text style={dashboardStyles.time}>{formatTime(progress.position)}</Text>
+              <Text style={dashboardStyles.timeRight}>{formatTime(progress.duration)}</Text>
+            </View>
+            </View>
+            
+          )}
+          
+        </View>
+      )}
     
                 {/* Actions: Likes and Comments */}
                 <View style={dashboardStyles.postActions}>

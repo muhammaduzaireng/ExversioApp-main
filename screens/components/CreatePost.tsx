@@ -22,6 +22,9 @@ const CreatePost = () => {
   const navigation = useNavigation();
   const [audioRecorderPlayer] = useState(new AudioRecorderPlayer());
   const [isRecording, setIsRecording] = useState(false);
+  const [audioTitle, setAudioTitle] = useState('');
+  const [musicTitle, setMusicTitle] = useState('');
+
 
   const selectMedia = async (type) => {
     if (type === 'image' || type === 'video') {
@@ -113,6 +116,7 @@ const CreatePost = () => {
 
       let mediaUrl = null;
       let mediaType = 'text'; // Default media type is 'text'
+      let musicTitle = null;
 
       // Upload media if selected
       if (media) {
@@ -155,6 +159,7 @@ const CreatePost = () => {
         content: content || '',
         mediaUrl,
         mediaType,
+        musicTitle: audioTitle || '',
       };
 
       const response = await fetch(`${BASE_URL}/create-post`, {
@@ -180,76 +185,116 @@ const CreatePost = () => {
       Alert.alert('Error', 'Failed to create post.');
     }
   };
-
+  const isValidPost = () => {
+    if (content.trim() === '') return false; // Post content cannot be empty
+    if ((media?.type?.startsWith('audio') || media?.type?.startsWith('music')) && !audioTitle.trim()) {
+      return false; // Title is required if adding music or recording audio
+    }
+    return true;
+  };
+  const selectMusic = async () => {
+    try {
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.audio], // Allow only audio files
+      });
+  
+      if (result) {
+        setMedia({
+          uri: result[0].uri,
+          type: result[0].type,
+          name: result[0].name,
+        });
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        console.log('User canceled the picker');
+      } else {
+        console.log('Error picking document:', err);
+      }
+    }
+  };  
   const handleCancel = () => {
     navigation.navigate('ArtistPostScreen'); // Navigate back to ArtistPostScreen
   };
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Post</Text>
-        <TouchableOpacity onPress={handlePost}>
-          <Text style={styles.postButtonText}>Post</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.container}>
+    <View style={styles.header}>
+      <TouchableOpacity onPress={handleCancel}>
+        <Text style={styles.cancelButtonText}>Cancel</Text>
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>Create Post</Text>
+      <TouchableOpacity onPress={handlePost} disabled={!isValidPost()}>
+        <Text style={[styles.postButtonText, !isValidPost() && styles.disabledPostButton]}>
+          Post
+        </Text>
+      </TouchableOpacity>
+    </View>
+  
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="What's on your mind?"
+        placeholderTextColor="#aaa"
+        value={content}
+        onChangeText={setContent}
+        multiline
+      />
+  
+      {media && (
+        <View style={styles.mediaPreviewContainer}>
+          {media.type.startsWith('image') && (
+            <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
+          )}
+          {media.type.startsWith('video') && (
+            <Text style={styles.mediaText}>Video: {media.name}</Text>
+          )}
+          {media.type.startsWith('audio') && (
+            <Text style={styles.mediaText}>Audio: {media.name}</Text>
+          )}
+          {media.type.startsWith('music') && (
+            <Text style={styles.mediaText}>Music: {media.name}</Text>
+          )}
+        </View>
+      )}
+  
+      {(isRecording || media?.type?.startsWith('audio') || media?.type?.startsWith('music')) && (
         <TextInput
           style={styles.input}
-          placeholder="What's on your mind?"
+          placeholder="Enter title for audio/music"
           placeholderTextColor="#aaa"
-          value={content}
-          onChangeText={setContent}
-          multiline
+          value={audioTitle}
+          onChangeText={setAudioTitle}
         />
+      )}
+      
 
-        {media && (
-          <View style={styles.mediaPreviewContainer}>
-            {media.type.startsWith('image') && (
-              <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
-            )}
-            {media.type.startsWith('video') && (
-              <Text style={styles.mediaText}>Video: {media.name}</Text>
-            )}
-            {media.type.startsWith('audio') && (
-              <Text style={styles.mediaText}>Audio: {media.name}</Text>
-            )}
-          </View>
-        )}
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.mediaButton}
-            onPress={() => selectMedia('image')}
-          >
-            <Text style={styles.mediaButtonText}>Add Image</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mediaButton}
-            onPress={() => selectMedia('video')}
-          >
-            <Text style={styles.mediaButtonText}>Add Video</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mediaButton}
-            onPress={captureImage}
-          >
-            <Text style={styles.mediaButtonText}>Capture Image</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.mediaButton}
-            onPress={recordAudio}
-          >
-            <Text style={styles.mediaButtonText}>
-              {isRecording ? 'Stop Recording' : 'Record Audio'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+  
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.mediaButton} onPress={() => selectMedia('image')}>
+          <Text style={styles.mediaButtonText}>Add Image</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.mediaButton} onPress={() => selectMedia('video')}>
+          <Text style={styles.mediaButtonText}>Add Video</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.mediaButton} onPress={captureImage}>
+          <Text style={styles.mediaButtonText}>Capture Image</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.mediaButton} onPress={recordAudio}>
+          <Text style={styles.mediaButtonText}>
+            {isRecording ? 'Stop Recording' : 'Record Audio'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+  style={styles.mediaButton}
+  onPress={selectMusic}
+>
+  <Text style={styles.mediaButtonText}>Add Music</Text>
+</TouchableOpacity>
       </View>
     </View>
+  </View>
+  
   );
 };
 

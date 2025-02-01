@@ -737,7 +737,7 @@ app.post('/create-post', async (req, res) => {
     }
 
     // Proceed with post creation if the artist is approved
-    const insertQuery = 'INSERT INTO posts (artist_id, content, media_url, media_type) VALUES (?, ?, ?, ?)';
+    const insertQuery = 'INSERT INTO posts (artist_id, content, media_url, media_type, music_title) VALUES (?, ?, ?, ?, ?)';
     const [insertResult] = await db.query(insertQuery, [artistId, content, mediaUrl, mediaType]);
 
     console.log('Post created successfully with ID:', insertResult.insertId);
