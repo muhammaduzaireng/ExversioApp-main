@@ -61,6 +61,7 @@ const Player = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={handleNavigateToMaximize}>
       <View style={styles.row}>
         <Image
           source={
@@ -86,17 +87,18 @@ const Player = () => {
             style={styles.playIcon}
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleNavigateToMaximize}>
+        {/* <TouchableOpacity onPress={handleNavigateToMaximize}>
           <Image source={require("../../assets/icons/maximize.png")} style={styles.maximizeIcon} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
       <View style={styles.progressBar}>
-        <Text style={styles.time}>{formatTime(progress)}</Text>
+        {/* <Text style={styles.time}>{formatTime(progress)}</Text> */}
         <View style={styles.progress}>
           <View style={{ ...styles.progressFill, width: `${(progress / duration) * 100}%` }} />
         </View>
-        <Text style={styles.time}>{formatTime(duration)}</Text>
+        {/* <Text style={styles.time}>{formatTime(duration)}</Text> */}
       </View>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -105,10 +107,10 @@ const styles = StyleSheet.create({
   
   container: {
     position: 'absolute',
-    bottom: 70,
+    bottom: 50,
     left: 0,
     right: 0,
-paddingHorizontal: 20,
+// paddingHorizontal: 10,
     justifyContent: 'space-around',
     paddingVertical: 20,
     borderTopWidth: 1,
@@ -121,14 +123,14 @@ paddingHorizontal: 20,
   
   
   row: { flexDirection: "row", alignItems: "center" },
-  avatar: { width: 50, height: 50, borderRadius: 25, marginHorizontal: 10 },
+  avatar: { width: 40, height: 40, borderRadius: 25, marginHorizontal: 10 },
   info: { flex: 1, marginHorizontal: 10 },
   title: { fontSize: 16, color: "#fff", fontWeight: "bold" },
   artist: { fontSize: 14, color: "#aaa" },  // Styling for artist name
   playIcon: { width: 18, height: 20, tintColor: "#fff", margin: 10 },
   maximizeIcon: { width: 18, height: 18, tintColor: "#fff" },
   progressBar: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  time: { fontSize: 12, color: "#aaa", marginHorizontal: 10 },
+  // time: { fontSize: 12, color: "#aaa", marginHorizontal: 10 },
   progress: { flex: 1, height: 5, backgroundColor: "#555", borderRadius: 2.5 },
   progressFill: { height: "100%", backgroundColor: "#2EF3DD" },
 });

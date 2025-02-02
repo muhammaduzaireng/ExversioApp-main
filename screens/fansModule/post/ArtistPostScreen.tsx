@@ -442,7 +442,7 @@ const ArtistPostScreen = () => {
           <View style={dashboardStyles.row}>
             <Image source={profilePicture ? { uri: profilePicture } : require("../../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
             <View style={dashboardStyles.info}>
-              <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.track_title || 'Unknown Track'}</Text>
+              <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
             </View>
             <TouchableOpacity onPress={() => playMusic(completeUrl)}>
               <Image

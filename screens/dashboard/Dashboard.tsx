@@ -264,10 +264,11 @@ const DashboardScreen = () => {
                 style={dashboardStyles.avatar}
               />
               <View style={dashboardStyles.userInfo}>
-                <Text style={dashboardStyles.username} onPress={() => navigation.navigate('ArtistProfileScreen', { artistId: item.artist_id })}>
+                <Text style={dashboardStyles.username} onPress={() => navigation.replace('ArtistProfileScreen', { artistId: item.artist_id })}>
                   {item.artist_name || 'Unknown Artist'}
+                  <Image source={require('../../assets/icons/icons8-blue-tick.png')} style={dashboardStyles.verifiedIcon} />
                 </Text>
-                <Image source={require('../../assets/icons/icons8-blue-tick.png')} style={dashboardStyles.verifiedIcon} />
+                
                 <Text style={dashboardStyles.timestamp}>{new Date(item.created_at).toLocaleString()}</Text>
               </View>
             </View>
@@ -283,7 +284,7 @@ const DashboardScreen = () => {
                 <View style={dashboardStyles.row}>
                   <Image source={item.artist_profile_picture ? { uri: item.artist_profile_picture } : require("../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
                   <View style={dashboardStyles.info}>
-                    <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.track_title || 'Unknown Track'}</Text>
+                    <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
                   </View>
                   <TouchableOpacity onPress={() => playMusic(completeUrl)}>
                     <Image

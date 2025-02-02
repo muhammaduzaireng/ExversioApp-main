@@ -13,6 +13,7 @@ import DocumentPicker from 'react-native-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import ArtistPostScreen from '../fansModule/post/ArtistPostScreen';
 
 const BASE_URL = 'https://api.exversio.com';
 
@@ -24,6 +25,10 @@ const CreatePost = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioTitle, setAudioTitle] = useState('');
   const [musicTitle, setMusicTitle] = useState('');
+ 
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
 
 
   const selectMedia = async (type) => {
@@ -113,12 +118,11 @@ const CreatePost = () => {
         Alert.alert('Error', 'Artist ID not available');
         return;
       }
-
+  
       let mediaUrl = null;
-      let mediaType = 'text'; // Default media type is 'text'
-      let musicTitle = null;
-
-      // Upload media if selected
+      let mediaType = 'text'; // Default type
+      let title = '';
+  
       if (media) {
         const formData = new FormData();
         formData.append('file', {
@@ -126,72 +130,140 @@ const CreatePost = () => {
           name: media.name,
           type: media.type,
         });
-
-        const uploadResponse = await fetch(`${BASE_URL}/upload-media`, {
+  
+        // Create a custom XMLHttpRequest for tracking upload progress
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${BASE_URL}/upload-media`, true);
+  
+        // Set headers
+        xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+  
+        // Track progress
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = (event.loaded / event.total) * 100;
+            setUploadProgress(progress);
+          }
+        };
+  
+        // Handle upload completion
+        xhr.onload = async () => {
+          if (xhr.status === 200) {
+            const uploadData = JSON.parse(xhr.responseText);
+  
+            if (uploadData.success && uploadData.url) {
+              mediaUrl = uploadData.url.startsWith('https://')
+                ? uploadData.url
+                : uploadData.url.replace('http://', 'https://');
+  
+              if (media.type.startsWith('image/')) {
+                mediaType = 'image';
+              } else if (media.type.startsWith('video/')) {
+                mediaType = 'video';
+              } else if (media.type.startsWith('audio/') || media.type.includes('music')) {
+                mediaType = 'audio';
+                title = musicTitle || audioTitle; // Use the entered title
+              } else {
+                mediaType = 'text';
+              }
+  
+              // Proceed with the post creation
+              const postData = {
+                artistId,
+                content: content || '',
+                mediaUrl,
+                mediaType,
+                musicTitle: title, // Ensure title is included
+              };
+  
+              const response = await fetch(`${BASE_URL}/create-post`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
+              });
+  
+              const data = await response.json();
+  
+              if (data.success) {
+                Alert.alert('Success', 'Post created successfully!');
+                setContent('');
+                setMedia(null);
+                setMusicTitle('');
+                setAudioTitle('');
+                navigation.navigate('ArtistPostScreen');
+              } else {
+                Alert.alert('Error', data.message || 'Failed to create post.');
+              }
+            } else {
+              Alert.alert('Error', 'Failed to upload media.');
+            }
+          } else {
+            Alert.alert('Error', 'Failed to upload media.');
+          }
+          setIsUploading(false);
+        };
+  
+        xhr.onerror = () => {
+          console.error('Error during media upload');
+          setIsUploading(false);
+          Alert.alert('Error', 'Failed to upload media.');
+        };
+  
+        // Start the upload
+        setIsUploading(true);
+        xhr.send(formData);
+      } else {
+        // If no media, proceed directly to creating the post
+        const postData = {
+          artistId,
+          content: content || '',
+          mediaUrl,
+          mediaType,
+          musicTitle: title, // Ensure title is included
+        };
+  
+        const response = await fetch(`${BASE_URL}/create-post`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
           },
-          body: formData,
+          body: JSON.stringify(postData),
         });
-
-        const uploadData = await uploadResponse.json();
-
-        if (uploadData.success && uploadData.url) {
-          mediaUrl = uploadData.url.startsWith('https://')
-            ? uploadData.url
-            : uploadData.url.replace('http://', 'https://');
-          mediaType = media.type.startsWith('image/')
-            ? 'image'
-            : media.type.startsWith('video/')
-            ? 'video'
-            : media.type.startsWith('audio/')
-            ? 'audio'
-            : 'text';
+  
+        const data = await response.json();
+  
+        if (data.success) {
+          Alert.alert('Success', 'Post created successfully!');
+          setContent('');
+          setMedia(null);
+          setMusicTitle('');
+          setAudioTitle('');
+          navigation.navigate('ArtistPostScreen');
         } else {
-          Alert.alert('Error', 'Failed to upload media.');
-          return;
+          Alert.alert('Error', data.message || 'Failed to create post.');
         }
-      }
-
-      const postData = {
-        artistId,
-        content: content || '',
-        mediaUrl,
-        mediaType,
-        musicTitle: audioTitle || '',
-      };
-
-      const response = await fetch(`${BASE_URL}/create-post`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        Alert.alert('Success', 'Post created successfully!');
-        setContent('');
-        setMedia(null);
-        navigation.navigate('ArtistPostScreen'); // Navigate back
-      } else {
-        Alert.alert('Error', data.message || 'Failed to create post.');
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      setIsUploading(false);
       Alert.alert('Error', 'Failed to create post.');
     }
   };
+  
+  
   const isValidPost = () => {
-    if (content.trim() === '') return false; // Post content cannot be empty
+   
+    
     if ((media?.type?.startsWith('audio') || media?.type?.startsWith('music')) && !audioTitle.trim()) {
-      return false; // Title is required if adding music or recording audio
+        console.log('Title is required if adding music or recording audio');
+        return false; // Title is required if adding music or recording audio
     }
+
     return true;
-  };
+};
+
   const selectMusic = async () => {
     try {
       const result = await DocumentPicker.pick({
@@ -201,7 +273,7 @@ const CreatePost = () => {
       if (result) {
         setMedia({
           uri: result[0].uri,
-          type: result[0].type,
+          type: 'audio/mp3',
           name: result[0].name,
         });
       }
@@ -214,94 +286,91 @@ const CreatePost = () => {
     }
   };  
   const handleCancel = () => {
-    navigation.navigate('ArtistPostScreen'); // Navigate back to ArtistPostScreen
+    navigation.replace('ArtistPostScreen'); // Replace the current screen with ArtistPostScreen
   };
+  
 
   return (
     <View style={styles.wrapper}>
-    <View style={styles.header}>
-      <TouchableOpacity onPress={handleCancel}>
-        <Text style={styles.cancelButtonText}>Cancel</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Create Post</Text>
-      <TouchableOpacity onPress={handlePost} disabled={!isValidPost()}>
-        <Text style={[styles.postButtonText, !isValidPost() && styles.disabledPostButton]}>
-          Post
-        </Text>
-      </TouchableOpacity>
-    </View>
-  
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="What's on your mind?"
-        placeholderTextColor="#aaa"
-        value={content}
-        onChangeText={setContent}
-        multiline
-      />
-  
-      {media && (
-        <View style={styles.mediaPreviewContainer}>
-          {media.type.startsWith('image') && (
-            <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
-          )}
-          {media.type.startsWith('video') && (
-            <Text style={styles.mediaText}>Video: {media.name}</Text>
-          )}
-          {media.type.startsWith('audio') && (
-            <Text style={styles.mediaText}>Audio: {media.name}</Text>
-          )}
-          {media.type.startsWith('music') && (
-            <Text style={styles.mediaText}>Music: {media.name}</Text>
-          )}
-        </View>
-      )}
-  
-      {(isRecording || media?.type?.startsWith('audio') || media?.type?.startsWith('music')) && (
-        <TextInput
-          style={styles.input}
-          placeholder="Enter title for audio/music"
-          placeholderTextColor="#aaa"
-          value={audioTitle}
-          onChangeText={setAudioTitle}
-        />
-      )}
-      
-
-  
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.mediaButton} onPress={() => selectMedia('image')}>
-          <Text style={styles.mediaButtonText}>Add Image</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleCancel}>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.mediaButton} onPress={() => selectMedia('video')}>
-          <Text style={styles.mediaButtonText}>Add Video</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.mediaButton} onPress={captureImage}>
-          <Text style={styles.mediaButtonText}>Capture Image</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.mediaButton} onPress={recordAudio}>
-          <Text style={styles.mediaButtonText}>
-            {isRecording ? 'Stop Recording' : 'Record Audio'}
+        <Text style={styles.headerTitle}>Create Post</Text>
+        <TouchableOpacity onPress={handlePost} disabled={!isValidPost() || isUploading}>
+          <Text style={[styles.postButtonText, (!isValidPost() || isUploading) && styles.disabledPostButton]}>
+            {isUploading ? 'Uploading...' : 'Post'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-  style={styles.mediaButton}
-  onPress={selectMusic}
->
-  <Text style={styles.mediaButtonText}>Add Music</Text>
-</TouchableOpacity>
+      </View>
+
+      <View style={styles.container}>
+        <TextInput
+          style={styles.input}
+          placeholder="What's on your mind?"
+          placeholderTextColor="#aaa"
+          value={content}
+          onChangeText={setContent}
+          multiline
+        />
+
+        {media && (
+          <View style={styles.mediaPreviewContainer}>
+            {media.type.startsWith('image') && (
+              <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
+            )}
+            {media.type.startsWith('video') && <Text style={styles.mediaText}>Video: {media.name}</Text>}
+            {media.type.startsWith('audio') && <Text style={styles.mediaText}>Audio: {media.name}</Text>}
+            {media.type.startsWith('music') && <Text style={styles.mediaText}>Music: {media.name}</Text>}
+          </View>
+        )}
+
+        {(media?.type?.startsWith('audio') || media?.type?.startsWith('music')) && (
+          <TextInput
+            style={styles.input}
+            placeholder="Enter title for audio/music"
+            placeholderTextColor="#aaa"
+            value={audioTitle}
+            onChangeText={setAudioTitle}
+          />
+        )}
+
+        {isUploading && (
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>Uploading: {uploadProgress}%</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
+            </View>
+          </View>
+        )}
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.mediaButton} onPress={() => selectMedia('image')}>
+            <Text style={styles.mediaButtonText}>Add Image</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.mediaButton} onPress={() => selectMedia('video')}>
+            <Text style={styles.mediaButtonText}>Add Video</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.mediaButton} onPress={captureImage}>
+            <Text style={styles.mediaButtonText}>Capture Image</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.mediaButton} onPress={recordAudio}>
+            <Text style={styles.mediaButtonText}>{isRecording ? 'Stop Recording' : 'Record Audio'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.mediaButton} onPress={selectMusic}>
+            <Text style={styles.mediaButtonText}>Add Music</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
-  </View>
-  
   );
 };
+
 
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
   },
   header: {
     flexDirection: 'row',
@@ -338,6 +407,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlignVertical: 'top',
     fontSize: 16,
+    color: '#fff',
   },
   mediaPreviewContainer: {
     width: '100%',
@@ -350,7 +420,7 @@ const styles = StyleSheet.create({
   },
   mediaText: {
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
   },
   buttonContainer: {
     flexDirection: 'row',

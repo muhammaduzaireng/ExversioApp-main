@@ -813,6 +813,7 @@ app.get('/approved-artists', async (req, res) => {
 
 
 
+
 // Endpoint to get posts for a specific artist
 
 // Get Posts Endpoint
@@ -1832,6 +1833,53 @@ app.post("/add-music-to-playlist", async (req, res) => {
 //   }
 // });
 
+// app.get("/get-playlist-music", async (req, res) => {
+//   const { playlist_id } = req.query;
+
+//   // Validate input
+//   if (!playlist_id) {
+//     return res.status(400).json({ success: false, message: "Playlist ID is required." });
+//   }
+
+//   try {
+//     // SQL query to fetch playlist music details
+//     const query = `
+//       SELECT 
+//         pm.music_id, 
+//         am.title AS music_title, 
+//         am.file_url, 
+//         am.cover_url, 
+//         am.artist_id, 
+//         aa.name AS artist_name
+//       FROM 
+//         playlistmusic pm
+//       INNER JOIN 
+//         albummusic am 
+//       ON 
+//         pm.music_id = am.music_id
+//       INNER JOIN 
+//         approved_artists aa 
+//       ON 
+//         am.artist_id = aa.artist_id
+//       WHERE 
+//         pm.playlist_id = ?
+//     `;
+
+//     // Execute query
+//     const [rows] = await db.execute(query, [playlist_id]);
+
+//     // Check if no data is found
+//     if (rows.length === 0) {
+//       return res.status(404).json({ success: false, message: "No music found for the given playlist." });
+//     }
+
+//     // Send response
+//     res.status(200).json({ success: true, music: rows });
+//   } catch (error) {
+//     console.error("Database Error:", error);
+//     res.status(500).json({ success: false, message: "Failed to fetch playlist music.", error: error.message });
+//   }
+// });
 app.get("/get-playlist-music", async (req, res) => {
   const { playlist_id } = req.query;
 
@@ -1841,7 +1889,7 @@ app.get("/get-playlist-music", async (req, res) => {
   }
 
   try {
-    // SQL query to fetch playlist music details
+    // SQL query to fetch playlist music details including profile_picture
     const query = `
       SELECT 
         pm.music_id, 
@@ -1849,7 +1897,8 @@ app.get("/get-playlist-music", async (req, res) => {
         am.file_url, 
         am.cover_url, 
         am.artist_id, 
-        aa.name AS artist_name
+        aa.name AS artist_name,
+        (SELECT profile_picture FROM profile WHERE profile.user_id = aa.user_id LIMIT 1) AS profile_picture
       FROM 
         playlistmusic pm
       INNER JOIN 
@@ -1879,6 +1928,7 @@ app.get("/get-playlist-music", async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch playlist music.", error: error.message });
   }
 });
+
 
 app.post('/process-payment', async (req, res) => {
   try {

@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Player from "../components/Player";
 import { usePlayer } from "../components/PlayerContext";
+import  dashboardStyles  from "../../styles/dashboardStyles";
 
 const LibraryScreen = () => {
   const { playMusic, pauseMusic, currentMusic, isPlaying } = usePlayer();
@@ -25,6 +26,9 @@ const LibraryScreen = () => {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [userId, setUserId] = useState(null);
   const [currentMusicIndex, setCurrentMusicIndex] = useState(null);
+ 
+   const [artists, setArtists] = useState<Artist[]>([]);
+  
 
   useEffect(() => {
     const getUserId = async () => {
@@ -38,6 +42,38 @@ const LibraryScreen = () => {
     };
     getUserId();
   }, []);
+  useEffect(() => {
+      const fetchApprovedArtists = async () => {
+        try {
+          const response = await fetch(`${BASE_URL}/approved-artists`);
+          const data = await response.json();
+  
+          if (data.success) {
+            // Transform artist data to include the base URL for profile picture URLs
+            const artistsWithFullUrls = data.artists.map((artist) => ({
+              ...artist,
+              profile_picture: artist.profile_picture
+                ? artist.profile_picture.startsWith("http")
+                  ? artist.profile_picture
+                  : `${BASE_URL}${artist.profile_picture}`
+                : null, // Keep null if profile picture is missing
+            }));
+           
+  
+  
+            setArtists(artistsWithFullUrls);
+            console.log("Fetched artists with full URLs:", artist); // Debug log to confirm URL transformation
+          } else {
+            Alert.alert("Error", "Failed to load artists");
+          }
+        } catch (error) {
+          console.error("Error fetching artists:", error);
+          Alert.alert("Error", "Failed to load artists");
+        }
+      };
+  
+      fetchApprovedArtists();
+    }, []);
 
   const fetchPlaylists = async (userId) => {
     try {
@@ -138,6 +174,7 @@ const LibraryScreen = () => {
         <Text style={styles.playlistName}>{item.name}</Text>
       </View>
     </TouchableOpacity>
+    
   );
 
   // const renderMusicItem = ({ item }) => (
@@ -166,6 +203,8 @@ const LibraryScreen = () => {
     console.log("item", item),
     <View style={styles.musicItem}>
       <Text style={styles.musicTitle}>{item.music_title}</Text>
+      <Text style={styles.musicTitle}>{item.artist_name}</Text>
+
       <TouchableOpacity
         onPress={() => {
           playMusic(
@@ -182,6 +221,7 @@ const LibraryScreen = () => {
           {currentMusic?.music_id === item.music_id && isPlaying ? "Pause" : "Play"}
         </Text>
       </TouchableOpacity>
+      
     </View>
   );
   
@@ -360,3 +400,29 @@ const styles = StyleSheet.create({
 });
 
 export default LibraryScreen;
+
+{/* <View style={dashboardStyles.trackContainer}>
+          <View style={dashboardStyles.row}>
+            <Image source={profilePicture ? { uri: profilePicture } : require("../../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
+            <View style={dashboardStyles.info}>
+              <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
+            </View>
+            <TouchableOpacity onPress={() => playMusic(
+            {
+              ...item,
+              file_url: item.file_url, // The file_url is now guaranteed to be a complete URL
+            },
+            playlistMusic, // Pass the full playlist
+            index)
+          }>
+
+              <Image
+                source={currentMusic?.music_id === item.music_id && isPlaying? require("../../../assets/icons/icons8-pause-90.png") : require("../../../assets/icons/211876_play_icon.png")}
+                style={dashboardStyles.playIcon}
+              />
+            </TouchableOpacity>
+          </View>
+
+       
+          
+        </View> */}

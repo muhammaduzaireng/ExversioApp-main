@@ -49,6 +49,7 @@ const DiscoverScreen = () => {
 
 
           setArtists(artistsWithFullUrls);
+          console.log("Artists loaded:", artists);
         } else {
           Alert.alert("Error", "Failed to load artists");
         }
