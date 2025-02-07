@@ -1308,6 +1308,25 @@ app.post('/subscribe', async (req, res) => {
   }
 });
 
+app.get('/check-subscription', async (req, res) => {
+  const { user_id, artist_id } = req.query;
+
+  try {
+    const checkQuery = `
+      SELECT * FROM subscriptions WHERE user_id = ? AND artist_id = ?
+    `;
+    const [results] = await db.query(checkQuery, [user_id, artist_id]);
+
+    if (results.length > 0) {
+      return res.json({ success: true, subscribed: true });
+    } else {
+      return res.json({ success: true, subscribed: false });
+    }
+  } catch (err) {
+    console.error('Database error in check subscription:', err);
+    res.status(500).json({ success: false, message: 'Failed to check subscription' });
+  }
+});
 //feed
 // app.get('/get-feed', (req, res) => {
 //   const userId = req.query.userId;
