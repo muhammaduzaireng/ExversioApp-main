@@ -1161,7 +1161,60 @@ app.get('/get-posts', async (req, res) => {
 
 
 
+// Endpoint to update a post
+app.post('/update-post', async (req, res) => {
+  const { postId, content } = req.body;
 
+  if (!postId || !content) {
+    return res.status(400).json({ success: false, message: 'postId and content are required' });
+  }
+
+  const query = `
+    UPDATE posts 
+    SET content = ? 
+    WHERE id = ?
+  `;
+
+  try {
+    const [result] = await db.query(query, [content, postId]);
+
+    if (result.affectedRows > 0) {
+      return res.status(200).json({ success: true, message: 'Post updated successfully' });
+    } else {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+  } catch (err) {
+    console.error('Error updating post:', err);
+    return res.status(500).json({ success: false, message: 'Failed to update post' });
+  }
+});
+
+// Endpoint to delete a post
+app.post('/delete-post', async (req, res) => {
+  const { postId } = req.body;
+
+  if (!postId) {
+    return res.status(400).json({ success: false, message: 'postId is required' });
+  }
+
+  const query = `
+    DELETE FROM posts 
+    WHERE id = ?
+  `;
+
+  try {
+    const [result] = await db.query(query, [postId]);
+
+    if (result.affectedRows > 0) {
+      return res.status(200).json({ success: true, message: 'Post deleted successfully' });
+    } else {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    return res.status(500).json({ success: false, message: 'Failed to delete post' });
+  }
+});
 
 
 
