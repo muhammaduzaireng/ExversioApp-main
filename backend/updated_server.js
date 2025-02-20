@@ -672,7 +672,7 @@ app.get('/getSubscriptionPrice', (req, res) => {
 // Endpoint to update subscription price
 app.post('/updateSubscriptionPrice', (req, res) => {
   const { userId, subscriptionPrice } = req.body;
-  db.run(
+  db.query(
     'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?',
     [subscriptionPrice, userId],
     function (err) {
