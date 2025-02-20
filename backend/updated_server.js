@@ -659,16 +659,14 @@ app.post('/become-artist', async (req, res) => {
 
 app.get('/getSubscriptionPrice', async (req, res) => {
   const { userId } = req.query;
+  const query = 'SELECT subscription_price FROM artists_requests WHERE user_id = ?';
   try {
-    db.get('SELECT subscription_price FROM artists_requests WHERE user_id = ?', [userId], (err, row) => {
-      if (err) {
-        res.json({ success: false, message: 'Error retrieving subscription price' });
-      } else if (row) {
-        res.json({ success: true, subscriptionPrice: row.subscription_price });
-      } else {
-        res.json({ success: false, message: 'User not found' });
-      }
-    });
+    const [results] = await db.query(query, [userId]);
+    if (results.length > 0) {
+      res.json({ success: true, subscriptionPrice: results[0].subscription_price });
+    } else {
+      res.json({ success: false, message: 'User not found' });
+    }
   } catch (err) {
     res.json({ success: false, message: 'Error retrieving subscription price' });
   }
@@ -677,18 +675,10 @@ app.get('/getSubscriptionPrice', async (req, res) => {
 // Endpoint to update subscription price
 app.post('/updateSubscriptionPrice', async (req, res) => {
   const { userId, subscriptionPrice } = req.body;
+  const query = 'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?';
   try {
-    db.run(
-      'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?',
-      [subscriptionPrice, userId],
-      function (err) {
-        if (err) {
-          res.json({ success: false, message: 'Error updating subscription price' });
-        } else {
-          res.json({ success: true, message: 'Subscription price updated' });
-        }
-      }
-    );
+    const [result] = await db.query(query, [subscriptionPrice, userId]);
+    res.json({ success: true, message: 'Subscription price updated' });
   } catch (err) {
     res.json({ success: false, message: 'Error updating subscription price' });
   }
