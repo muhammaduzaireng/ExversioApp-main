@@ -656,33 +656,50 @@ app.post('/become-artist', async (req, res) => {
 });
 
 // Endpoint to get subscription price
-app.get('/getSubscriptionPrice', (req, res) => {
+// Endpoint to get subscription price
+app.get('/getSubscriptionPrice', async (req, res) => {
   const { userId } = req.query;
-  db.get('SELECT subscription_price FROM artists_requests WHERE user_id = ?', [userId], (err, row) => {
-    if (err) {
-      res.json({ success: false, message: 'Error retrieving subscription price' });
-    } else if (row) {
+  try {
+    const row = await new Promise((resolve, reject) => {
+      db.get('SELECT subscription_price FROM artists_requests WHERE user_id = ?', [userId], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row);
+        }
+      });
+    });
+    if (row) {
       res.json({ success: true, subscriptionPrice: row.subscription_price });
     } else {
       res.json({ success: false, message: 'User not found' });
     }
-  });
+  } catch (err) {
+    res.json({ success: false, message: 'Error retrieving subscription price' });
+  }
 });
 
 // Endpoint to update subscription price
-app.post('/updateSubscriptionPrice', (req, res) => {
+app.post('/updateSubscriptionPrice', async (req, res) => {
   const { userId, subscriptionPrice } = req.body;
-  db.query(
-    'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?',
-    [subscriptionPrice, userId],
-    function (err) {
-      if (err) {
-        res.json({ success: false, message: 'Error updating subscription price' });
-      } else {
-        res.json({ success: true, message: 'Subscription price updated' });
-      }
-    }
-  );
+  try {
+    await new Promise((resolve, reject) => {
+      db.query(
+        'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?',
+        [subscriptionPrice, userId],
+        function (err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+    res.json({ success: true, message: 'Subscription price updated' });
+  } catch (err) {
+    res.json({ success: false, message: 'Error updating subscription price' });
+  }
 });
 app.get('/get-artist-request', async (req, res) => {
   const { user_id } = req.query; // Expecting user_id as a query parameter
