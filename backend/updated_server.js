@@ -661,7 +661,8 @@ app.get('/getSubscriptionPrice', async (req, res) => {
   const { userId } = req.query;
   try {
     const row = await new Promise((resolve, reject) => {
-      db.get('SELECT subscription_price FROM artists_requests WHERE user_id = ?', [userId], (err, row) => {
+      const query = 'SELECT subscription_price FROM artists_requests WHERE user_id = ?';
+      db.get(query, [userId], (err, row) => {
         if (err) {
           reject(err);
         } else {
@@ -669,6 +670,7 @@ app.get('/getSubscriptionPrice', async (req, res) => {
         }
       });
     });
+
     if (row) {
       res.json({ success: true, subscriptionPrice: row.subscription_price });
     } else {
