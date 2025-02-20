@@ -656,26 +656,19 @@ app.post('/become-artist', async (req, res) => {
 });
 
 // Endpoint to get subscription price
-// Endpoint to get subscription price
+
 app.get('/getSubscriptionPrice', async (req, res) => {
   const { userId } = req.query;
   try {
-    const row = await new Promise((resolve, reject) => {
-      const query = 'SELECT subscription_price FROM artists_requests WHERE user_id = ?';
-      db.get(query, [userId], (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      });
+    db.get('SELECT subscription_price FROM artists_requests WHERE user_id = ?', [userId], (err, row) => {
+      if (err) {
+        res.json({ success: false, message: 'Error retrieving subscription price' });
+      } else if (row) {
+        res.json({ success: true, subscriptionPrice: row.subscription_price });
+      } else {
+        res.json({ success: false, message: 'User not found' });
+      }
     });
-
-    if (row) {
-      res.json({ success: true, subscriptionPrice: row.subscription_price });
-    } else {
-      res.json({ success: false, message: 'User not found' });
-    }
   } catch (err) {
     res.json({ success: false, message: 'Error retrieving subscription price' });
   }
@@ -685,20 +678,17 @@ app.get('/getSubscriptionPrice', async (req, res) => {
 app.post('/updateSubscriptionPrice', async (req, res) => {
   const { userId, subscriptionPrice } = req.body;
   try {
-    await new Promise((resolve, reject) => {
-      db.query(
-        'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?',
-        [subscriptionPrice, userId],
-        function (err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
+    db.run(
+      'UPDATE artists_requests SET subscription_price = ? WHERE user_id = ?',
+      [subscriptionPrice, userId],
+      function (err) {
+        if (err) {
+          res.json({ success: false, message: 'Error updating subscription price' });
+        } else {
+          res.json({ success: true, message: 'Subscription price updated' });
         }
-      );
-    });
-    res.json({ success: true, message: 'Subscription price updated' });
+      }
+    );
   } catch (err) {
     res.json({ success: false, message: 'Error updating subscription price' });
   }
