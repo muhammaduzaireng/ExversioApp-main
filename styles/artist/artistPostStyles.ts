@@ -5,7 +5,6 @@ const { width, height } = Dimensions.get('window');
 const artistPostStyles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: width * 0.03, // Responsive padding
     backgroundColor: '#1E1E1E',
     paddingTop: height * 0.04, // Responsive padding
   },

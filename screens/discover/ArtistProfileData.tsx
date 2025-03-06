@@ -17,13 +17,15 @@ import artistPostStyles from '../../styles/artist/artistPostStyles';
 import dashboardStyles from '../../styles/dashboardStyles';
 import Player from '../components/Player';
 import ArtistAlbums from './ArtistAlbums';
+import { usePlayer } from '../../screens/components/PlayerContext'; // Import usePlayer
 
 type ArtistProfileDataNavigationProp = StackNavigationProp<any, 'ArtistProfileData'>;
 
 const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBack }) => {
-  const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
+  const BASE_URL = "https://api.exversio.com"; // Replace with your server's URL
   const navigation = useNavigation<ArtistProfileDataNavigationProp>();
- 
+  const { playMusic, isPlaying, currentPlaying } = usePlayer(); // Use the playMusic function from the context
+
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
   const [artistNames, setArtistNames] = useState('Unknown Artist');
@@ -37,6 +39,7 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
   const [coverImage, setCoverImage] = useState(null);
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubscribed, setIsSubscribed] = useState(false); // New state for subscription status
 
   useEffect(() => {
     const fetchApprovedArtists = async (user_id) => {
@@ -89,8 +92,6 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
               ? data.profile_picture
               : `${BASE_URL}${data.profile_picture}`
             : null;
-
-          
 
           const responseArtistData = await fetch(`${BASE_URL}/get-artist-request?user_id=${user_id}`);
           const dataArtistData = await responseArtistData.json();
@@ -155,8 +156,25 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
   useEffect(() => {
     if (artistId && savedUserId) {
       fetchPosts();
+      checkSubscriptionStatus(); // Check subscription status
     }
   }, [artistId, savedUserId]);
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/check-subscription?user_id=${savedUserId}&artist_id=${artistId}`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setIsSubscribed(data.subscribed);
+      } else {
+        console.error('Failed to check subscription status:', data.message);
+      }
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+    }
+  };
 
   const handleComment = async (postId, commentText) => {
     try {
@@ -251,6 +269,7 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
       const data = await response.json();
       if (data.success) {
         Alert.alert('Success', 'Subscribed successfully!');
+        setIsSubscribed(true); // Update subscription status
       } else {
         Alert.alert('Error', data.message || 'Failed to subscribe.');
       }
@@ -303,9 +322,10 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
           <TouchableOpacity
             style={artistProfileStyles.subscribeButton}
             onPress={handleSubscribe}
+            disabled={isSubscribed} // Disable the button if already subscribed
           >
             <Text style={artistProfileStyles.subscribeButtonText}>
-              Subscribe €{artistSubscriptionPrice || '0'} per month
+              {isSubscribed ? 'Subscribed' : `Subscribe €${artistSubscriptionPrice || '0'} per month`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -345,18 +365,25 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
         </View>
       </View>
     );
-  }, [coverImage, artists, profilePicture, artistNames, artistBio, artistSubscriptionPrice, selectedTab]);
+  }, [coverImage, artists, profilePicture, artistNames, artistBio, artistSubscriptionPrice, selectedTab, isSubscribed]);
 
   const cachedHeader = useMemo(renderHeader, [renderHeader]);
 
-  const renderPost = ({ item }) => (
-    <View style={dashboardStyles.postContainer}>
-      {/* Post Header */}
-      <View style={dashboardStyles.postHeader}>
+  const renderPost = ({ item }) => {
+    const completeUrl = item.media_url 
+      ? (item.media_url.startsWith("http") ? item.media_url : `${BASE_URL}${item.media_url}`) 
+      : null;
+    const isPlayingCurrent = currentPlaying === completeUrl && isPlaying;
+    console.log(item);
+
+    return (
+      <View style={dashboardStyles.postContainer}>
+        {/* Post Header */}
+        <View style={dashboardStyles.postHeader}>
         <View style={dashboardStyles.avatarContainer}>
           {artists.map((artist) => (
             <View key={artist.id} style={dashboardStyles.avatarWrapper}>
-              {artist.profile_picture ? (
+              {profilePicture ? (
                 <Image
                   source={{ uri: profilePicture }}
                   style={dashboardStyles.avatar}
@@ -387,76 +414,93 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
           <Text style={dashboardStyles.timestamp}>{new Date(item.timestamp).toLocaleString()}</Text>
         </View>
       </View>
+        
 
-      {/* Post Content */}
-      <Text style={dashboardStyles.postText}>{item.content}</Text>
+        {/* Post Content */}
+        <Text style={dashboardStyles.postText}>{item.content}</Text>
 
-      {/* Media Display */}
-      {item.media_url && item.media_type === 'image' && (
-        <Image source={{ uri: item.media_url }} style={artistPostStyles.postMedia} />
-      )}
-      {item.media_url && item.media_type === 'audio' && (
-        <View style={artistPostStyles.audioContainer}>
-          <Text>Audio file: {item.media_url}</Text>
-        </View>
-      )}
+        {/* Media Display */}
+        {completeUrl && item.media_type === 'image' && <Image source={{ uri: completeUrl }} style={artistPostStyles.postMedia} />}
 
-      {/* Actions: Likes and Comments */}
-      <View style={dashboardStyles.postActions}>
-        <Text style={dashboardStyles.likeCount}>{item.like_count || 0}</Text>
-        <TouchableOpacity onPress={() => handleLike(item.id)}>
-          <Image
-            source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
-            style={[
-              dashboardStyles.actionIconLike,
-              { tintColor: item.isLiked ? 'red' : 'white' },
-            ]}
-          />
-        </TouchableOpacity>
-        <Text style={dashboardStyles.commentCount}>
-          {Array.isArray(item.comments) ? item.comments.length : 0}
-        </Text>
-        <TouchableOpacity onPress={() => setActiveCommentPostId(item.id)}>
-          <Image
-            source={require('../../assets/icons/icons8-comment.png')}
-            style={dashboardStyles.actionIconComment}
-          />
-        </TouchableOpacity>
-      </View>
+        {completeUrl && item.media_type === 'audio' && (
+          <View style={dashboardStyles.trackContainer}>
+            <View style={dashboardStyles.row}>
+              <Image source={profilePicture ? { uri: profilePicture } : require("../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
+              <View style={dashboardStyles.info}>
+                <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
+              </View>
+              <TouchableOpacity onPress={() => playMusic({
+                music_id: item.id,
+                file_url: completeUrl,
+                music_title: item.music_title || 'Track Title',
+                artist_name: item.artist_name || 'Artist Name',
+                profile_picture: profilePicture || 'https://placekitten.com/300/300'
+              })}>
+                <Image
+                  source={isPlayingCurrent ? require("../../assets/icons/icons8-pause-90.png") : require("../../assets/icons/211876_play_icon.png")}
+                  style={dashboardStyles.playIcon}
+                />
+              </TouchableOpacity>
+            </View>
 
-      {/* Comment Input */}
-      {activeCommentPostId === item.id && (
-        <View style={dashboardStyles.commentInputContainer}>
-          <TextInput
-            style={dashboardStyles.commentInput}
-            placeholder="Write a comment..."
-            placeholderTextColor="#888"
-            value={newCommentText}
-            onChangeText={setNewCommentText}
-          />
-          <TouchableOpacity onPress={() => handleComment(item.id, newCommentText)}>
-            <Text style={dashboardStyles.commentSubmitButton}>Submit</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Comments Display */}
-      {Array.isArray(item.comments) && item.comments.length >= 0 ? (
-        item.comments.map((comment, index) => (
-          <View key={comment?.id || index} style={dashboardStyles.commentContainer}>
-            <Text style={dashboardStyles.commentText}>
-              <Text style={dashboardStyles.commentAuthor}>
-                {`${comment?.user_name || 'Anonymous'}: `}
-              </Text>
-              {comment?.text || 'No comment available'}
-            </Text>
           </View>
-        ))
-      ) : (
-        <Text style={dashboardStyles.noCommentsText}>No comments yet</Text>
-      )}
-    </View>
-  );
+        )}
+        <View style={dashboardStyles.postActions}>
+                <Text style={dashboardStyles.likeCount}>{item.like_count || 0}</Text>
+                <TouchableOpacity onPress={() => handleLike(item.id)}>
+                    <Image
+                        source={require('../../assets/icons/8542029_heart_love_like_icon.png')}
+                        style={[
+                            dashboardStyles.actionIconLike,
+                            { tintColor: item.isLiked ? 'red' : 'white' },
+                        ]}
+                    />
+                </TouchableOpacity>
+                <Text style={dashboardStyles.commentCount}>
+                    {Array.isArray(item.comments) ? item.comments.length : 0}
+                </Text>
+                <TouchableOpacity onPress={() => setActiveCommentPostId(item.id)}>
+                    <Image
+                        source={require('../../assets/icons/icons8-comment.png')}
+                        style={dashboardStyles.actionIconComment}
+                    />
+                </TouchableOpacity>
+            </View>
+
+            {/* Comment Input */}
+            {activeCommentPostId === item.id && (
+                <View style={dashboardStyles.commentInputContainer}>
+                    <TextInput
+                        style={dashboardStyles.commentInput}
+                        placeholder="Write a comment..."
+                        placeholderTextColor="#888"
+                        value={newCommentText}
+                        onChangeText={setNewCommentText}
+                    />
+                    <TouchableOpacity onPress={() => handleComment(item.id, newCommentText)}>
+                        <Text style={dashboardStyles.commentSubmitButton}>Submit</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Comments Display */}
+            {Array.isArray(item.comments) && item.comments.length > 0 ? (
+                item.comments.map((comment, index) => (
+                    <View key={comment?.id || index} style={dashboardStyles.commentContainer}>
+                        <Text style={dashboardStyles.commentText}>
+                            <Text style={dashboardStyles.commentAuthor}>
+                                {`${comment?.user_username || 'Anonymous'}: `}
+                            </Text>
+                            {comment?.text || 'No comment available'}
+                        </Text>
+                    </View>
+                ))
+            ) : (
+                <Text style={dashboardStyles.noCommentsText}>No comments yet</Text>
+            )}
+        </View>
+    );
+  };
 
   return (
     <View style={artistProfileStyles.container}>
@@ -498,4 +542,3 @@ const ArtistProfileData = ({ artistId, user_id, artistName, profilePicture, onBa
 };
 
 export default ArtistProfileData;
-

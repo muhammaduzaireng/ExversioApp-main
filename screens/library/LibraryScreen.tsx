@@ -14,10 +14,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Player from "../components/Player";
 import { usePlayer } from "../components/PlayerContext";
-import  dashboardStyles  from "../../styles/dashboardStyles";
+import playlistStyles from "../../styles/playlistStyles";
 
 const LibraryScreen = () => {
-  const { playMusic, pauseMusic, currentMusic, isPlaying } = usePlayer();
+  const { playMusic, pauseMusic, currentMusic, isPlaying, setIsPlaying } = usePlayer();
   const BASE_URL = "https://api.exversio.com";
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
@@ -26,9 +26,7 @@ const LibraryScreen = () => {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [userId, setUserId] = useState(null);
   const [currentMusicIndex, setCurrentMusicIndex] = useState(null);
- 
-   const [artists, setArtists] = useState<Artist[]>([]);
-  
+  const [currentMusicPlaylist, setCurrentMusicPlaylist] = useState(null);
 
   useEffect(() => {
     const getUserId = async () => {
@@ -42,38 +40,6 @@ const LibraryScreen = () => {
     };
     getUserId();
   }, []);
-  useEffect(() => {
-      const fetchApprovedArtists = async () => {
-        try {
-          const response = await fetch(`${BASE_URL}/approved-artists`);
-          const data = await response.json();
-  
-          if (data.success) {
-            // Transform artist data to include the base URL for profile picture URLs
-            const artistsWithFullUrls = data.artists.map((artist) => ({
-              ...artist,
-              profile_picture: artist.profile_picture
-                ? artist.profile_picture.startsWith("http")
-                  ? artist.profile_picture
-                  : `${BASE_URL}${artist.profile_picture}`
-                : null, // Keep null if profile picture is missing
-            }));
-           
-  
-  
-            setArtists(artistsWithFullUrls);
-            console.log("Fetched artists with full URLs:", artist); // Debug log to confirm URL transformation
-          } else {
-            Alert.alert("Error", "Failed to load artists");
-          }
-        } catch (error) {
-          console.error("Error fetching artists:", error);
-          Alert.alert("Error", "Failed to load artists");
-        }
-      };
-  
-      fetchApprovedArtists();
-    }, []);
 
   const fetchPlaylists = async (userId) => {
     try {
@@ -97,27 +63,30 @@ const LibraryScreen = () => {
       const response = await axios.get(`${BASE_URL}/get-playlist-music`, {
         params: { playlist_id: playlistId },
       });
-  
+
       if (response.data.success) {
-        // Transform URLs to include the base URL and handle null values
         const musicWithFullUrls = response.data.music.map((item) => ({
           ...item,
           file_url: item.file_url
             ? item.file_url.startsWith("http")
               ? item.file_url
               : `${BASE_URL}${item.file_url}`
-            : null, // Keep file_url null if it's missing
+            : null,
           cover_url: item.cover_url
             ? item.cover_url.startsWith("http")
               ? item.cover_url
               : `${BASE_URL}${item.cover_url}`
-            : null, // Keep cover_url null if it's missing
-          artist_name: item.artist_name || "Unknown Artist", // Handle missing artist name
+            : null,
+          artist_name: item.artist_name || "Unknown Artist",
+          profile_picture: item.profile_picture
+            ? item.profile_picture.startsWith("http")
+              ? item.profile_picture
+              : `${BASE_URL}${item.profile_picture}`
+            : null,
         }));
-  
-        // Set the transformed data to state
+
         setPlaylistMusic(musicWithFullUrls);
-        console.log("Fetched playlist music with artist names:", musicWithFullUrls); // Debug log to confirm URL transformation and artist names
+        console.log("Fetched playlist music with artist names:", musicWithFullUrls);
       } else {
         Alert.alert("Error", "Failed to fetch playlist music");
       }
@@ -126,11 +95,6 @@ const LibraryScreen = () => {
       Alert.alert("Error", "Failed to fetch playlist music");
     }
   };
-  
-  
-  
- 
-  
 
   const createPlaylist = async () => {
     if (!newPlaylistName.trim()) {
@@ -158,6 +122,23 @@ const LibraryScreen = () => {
     }
   };
 
+  const handlePlayPause = async (item, index) => {
+    if (currentMusic?.music_id === item.music_id) {
+      // Toggle play/pause
+      if (isPlaying) {
+        await pauseMusic();
+      } else {
+        await playMusic(currentMusic, playlistMusic, currentMusicIndex);
+      }
+      setIsPlaying(!isPlaying);
+    } else {
+      // Play new music
+      await playMusic(item, playlistMusic, index);
+      setIsPlaying(true);
+      setCurrentMusicPlaylist(item);
+    }
+  };
+
   const renderPlaylist = ({ item }) => (
     <TouchableOpacity
       style={styles.playlistItem}
@@ -174,57 +155,39 @@ const LibraryScreen = () => {
         <Text style={styles.playlistName}>{item.name}</Text>
       </View>
     </TouchableOpacity>
-    
   );
-
-  // const renderMusicItem = ({ item }) => (
-  //   <View style={styles.musicItem}>
-  //     <Text style={styles.musicTitle}>{item.music_title}</Text>
-  //     <TouchableOpacity
-  //       onPress={() =>
-  //         currentMusic?.music_id === item.music_id && isPlaying
-  //           ? pauseMusic()
-  //           : playMusic({
-  //               ...item,
-  //               file_url:
-  //                 item.file_url ||
-  //                 "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-  //             })
-  //       }
-  //     >
-  //       <Text style={styles.playButton}>
-  //         {currentMusic?.music_id === item.music_id && isPlaying ? "Pause" : "Play"}
-  //       </Text>
-  //     </TouchableOpacity>
-  //   </View>
-  // );
 
   const renderMusicItem = ({ item, index }) => (
-    console.log("item", item),
-    <View style={styles.musicItem}>
-      <Text style={styles.musicTitle}>{item.music_title}</Text>
-      <Text style={styles.musicTitle}>{item.artist_name}</Text>
-
-      <TouchableOpacity
-        onPress={() => {
-          playMusic(
-            {
-              ...item,
-              file_url: item.file_url, // The file_url is now guaranteed to be a complete URL
-            },
-            playlistMusic, // Pass the full playlist
-            index // Pass the index of the selected track
-          );
-        }}
-      >
-        <Text style={styles.playButton}>
-          {currentMusic?.music_id === item.music_id && isPlaying ? "Pause" : "Play"}
-        </Text>
-      </TouchableOpacity>
-      
+    <View style={playlistStyles.trackContainer}>
+      <View style={playlistStyles.row}>
+        <Image
+          source={item.profile_picture ? { uri: item.profile_picture } : require("../../assets/profile/profile-image.jpg")}
+          style={playlistStyles.trackAvatar}
+        />
+        <View style={playlistStyles.info}>
+          <Text style={playlistStyles.trackTitle} numberOfLines={1}>
+            {item.music_title || "Unknown Track"}
+          </Text>
+          <Text style={playlistStyles.artistName} numberOfLines={1}>
+            {item.artist_name || "Unknown Artist"}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => handlePlayPause(item, index)}>
+          <Image
+            source={
+              currentMusic?.music_id === item.music_id && isPlaying
+                ? require("../../assets/icons/icons8-pause-90.png")
+                : require("../../assets/icons/211876_play_icon.png")
+            }
+            style={playlistStyles.playIcon}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
-  
+
+  console.log("isPlaying", isPlaying);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -259,7 +222,6 @@ const LibraryScreen = () => {
         </View>
       )}
 
-      {/* Modal for creating a playlist */}
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <TextInput
@@ -280,15 +242,12 @@ const LibraryScreen = () => {
         </View>
       </Modal>
 
-      {/* Player and Navigation */}
-      
-        <Player />
-       
-      </View>
-    
+      <Player />
+    </View>
   );
 };
-import {  Dimensions } from "react-native";
+
+import { Dimensions } from "react-native";
 import NavigationBar from "../components/NavigationBar";
 
 const { width, height } = Dimensions.get("window");
@@ -296,54 +255,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1a1a1a",
-    padding: width * 0.02, // 2% of screen width
+    padding: width * 0.05,
+    paddingTop: height * 0.05,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: height * 0.02, // 2% of screen height
+    marginBottom: height * 0.02,
   },
   title: {
-    fontSize: width * 0.06, // 6% of screen width
+    fontSize: width * 0.06,
     fontWeight: "bold",
     color: "#fff",
   },
   headerIcon: {
-    width: width * 0.06, // 6% of screen width
-    height: width * 0.06, // Maintain aspect ratio
+    width: width * 0.06,
+    height: width * 0.06,
   },
   playlistItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: height * 0.02, // 2% of screen height
+    marginBottom: height * 0.02,
   },
   playlistImage: {
-    width: width * 0.15, // 15% of screen width
-    height: width * 0.15, // Maintain square shape
-    borderRadius: width * 0.03, // Rounded corners
-    marginRight: width * 0.04, // 4% of screen width
+    width: width * 0.15,
+    height: width * 0.15,
+    borderRadius: width * 0.03,
+    marginRight: width * 0.04,
   },
   playlistInfo: {
     flex: 1,
   },
   playlistName: {
-    fontSize: width * 0.045, // 4.5% of screen width
+    fontSize: width * 0.045,
     fontWeight: "bold",
     color: "#fff",
   },
   selectedPlaylistHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: height * 0.02, // 2% of screen height
+    marginBottom: height * 0.02,
   },
   backButton: {
-    fontSize: width * 0.04, // 4% of screen width
+    fontSize: width * 0.04,
     color: "#2EF3DD",
-    marginRight: width * 0.02, // 2% of screen width
+    marginRight: width * 0.02,
   },
   playlistTitle: {
-    fontSize: width * 0.05, // 5% of screen width
+    fontSize: width * 0.05,
     fontWeight: "bold",
     color: "#fff",
   },
@@ -351,18 +311,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: height * 0.015, // 1.5% of screen height
-    padding: width * 0.04, // 4% of screen width
+    marginBottom: height * 0.015,
+    padding: width * 0.04,
     backgroundColor: "#333",
-    borderRadius: width * 0.03, // 3% of screen width
+    borderRadius: width * 0.03,
   },
   musicTitle: {
-    fontSize: width * 0.04, // 4% of screen width
+    fontSize: width * 0.04,
     color: "#fff",
     flex: 1,
   },
   playButton: {
-    fontSize: width * 0.04, // 4% of screen width
+    fontSize: width * 0.04,
     color: "#2EF3DD",
   },
   modalContainer: {
@@ -373,56 +333,29 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "80%",
-    padding: height * 0.02, // 2% of screen height
+    padding: height * 0.02,
     backgroundColor: "#fff",
-    borderRadius: width * 0.03, // 3% of screen width
-    marginBottom: height * 0.03, // 3% of screen height
+    borderRadius: width * 0.03,
+    marginBottom: height * 0.03,
   },
   createButton: {
-    padding: height * 0.02, // 2% of screen height
+    padding: height * 0.02,
     backgroundColor: "#2EF3DD",
-    borderRadius: width * 0.03, // 3% of screen width
+    borderRadius: width * 0.03,
   },
   createButtonText: {
     color: "#000",
     fontWeight: "bold",
-    fontSize: width * 0.045, // 4.5% of screen width
+    fontSize: width * 0.045,
   },
   cancelButton: {
-    padding: height * 0.02, // 2% of screen height
-    marginTop: height * 0.015, // 1.5% of screen height
+    padding: height * 0.02,
+    marginTop: height * 0.015,
   },
   cancelButtonText: {
     color: "#fff",
-    fontSize: width * 0.04, // 4% of screen width
+    fontSize: width * 0.04,
   },
-  
 });
 
 export default LibraryScreen;
-
-{/* <View style={dashboardStyles.trackContainer}>
-          <View style={dashboardStyles.row}>
-            <Image source={profilePicture ? { uri: profilePicture } : require("../../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
-            <View style={dashboardStyles.info}>
-              <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
-            </View>
-            <TouchableOpacity onPress={() => playMusic(
-            {
-              ...item,
-              file_url: item.file_url, // The file_url is now guaranteed to be a complete URL
-            },
-            playlistMusic, // Pass the full playlist
-            index)
-          }>
-
-              <Image
-                source={currentMusic?.music_id === item.music_id && isPlaying? require("../../../assets/icons/icons8-pause-90.png") : require("../../../assets/icons/211876_play_icon.png")}
-                style={dashboardStyles.playIcon}
-              />
-            </TouchableOpacity>
-          </View>
-
-       
-          
-        </View> */}

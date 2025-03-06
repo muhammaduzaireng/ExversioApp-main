@@ -1,116 +1,98 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from "react";
-import Sound from "react-native-sound";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import TrackPlayer, { 
+  usePlaybackState, 
+  State as TrackPlayerState, 
+  useProgress,
+} from "react-native-track-player";
+import trackPlayerSetup from "../player/trackPlayerSetup";
 
 const PlayerContext = createContext(null);
 
 export const PlayerProvider = ({ children }) => {
-  const [currentMusic, setCurrentMusic] = useState(null); // Currently playing music
-  const [isPlaying, setIsPlaying] = useState(false); // Playback state
-  const [progress, setProgress] = useState(0); // Playback progress
-  const [duration, setDuration] = useState(0); // Music duration
-  const [playlist, setPlaylist] = useState([]); // Full playlist
-  const [currentMusicIndex, setCurrentMusicIndex] = useState(0); // Current music index
-  const [artistName, setArtistName] = useState("Unknown Artist"); // Current artist name
-  const soundRef = useRef(null); // Reference to the sound object
+  const [currentMusic, setCurrentMusic] = useState(null);
+  const [playlist, setPlaylist] = useState([]);
+  const [currentMusicIndex, setCurrentMusicIndex] = useState(0);
+  const [artistName, setArtistName] = useState("Unknown Artist");
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false); // Ensure boolean state
 
-  // Cleanup soundRef on unmount
+  const playbackState = usePlaybackState(); // Get playing, paused, stopped state
+  const { position, duration } = useProgress(); // Get progress and duration
+
+  // Track playback state changes
   useEffect(() => {
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.stop(() => soundRef.current.release());
-      }
+    setIsPlaying(playbackState === TrackPlayerState.Playing);
+  }, [playbackState]);
+
+  // Initialize Track Player
+  useEffect(() => {
+    const setup = async () => {
+      await trackPlayerSetup();
+      await TrackPlayer.updateOptions({
+        stopWithApp: false, // Ensure music plays in background
+        capabilities: [
+          TrackPlayer.CAPABILITY_PLAY,
+          TrackPlayer.CAPABILITY_PAUSE,
+          TrackPlayer.CAPABILITY_SKIP_TO_NEXT,
+          TrackPlayer.CAPABILITY_SKIP_TO_PREVIOUS,
+        ],
+        compactCapabilities: [
+          TrackPlayer.CAPABILITY_PLAY,
+          TrackPlayer.CAPABILITY_PAUSE,
+        ],
+        notificationCapabilities: [
+          TrackPlayer.CAPABILITY_PLAY,
+          TrackPlayer.CAPABILITY_PAUSE,
+          TrackPlayer.CAPABILITY_SKIP_TO_NEXT,
+          TrackPlayer.CAPABILITY_SKIP_TO_PREVIOUS,
+          TrackPlayer.CAPABILITY_STOP,
+        ],
+      });
     };
+    setup();
   }, []);
 
-  // Update progress every second
-  useEffect(() => {
-    let interval = null;
+  // Normalize music object structure
+  const normalizeMusic = (music) => ({
+    id: music.music_id || music.id,
+    url: music.file_url || music.url,
+    title: music.music_title || music.title,
+    artist: music.artist_name || music.artist,
+    artwork: music.profile_picture || music.artwork,
+  });
 
-    if (soundRef.current && isPlaying) {
-      interval = setInterval(() => {
-        soundRef.current.getCurrentTime((time) => {
-          setProgress(time || 0);
-        });
-      }, 1000);
-    }
+  // Play a music track
+  const playMusic = async (music, playlistData = [], index = 0) => {
+    if (!music) return;
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isPlaying]);
+    const normalizedMusic = normalizeMusic(music);
+    await TrackPlayer.reset();
+    setPlaylist(playlistData);
+    setCurrentMusicIndex(index);
+    setCurrentMusic(normalizedMusic);
+    setArtistName(normalizedMusic.artist);
+    setProfilePicture(normalizedMusic.artwork);
 
-  const initializeSound = (fileUrl, onCompletion) => {
-    if (soundRef.current) {
-      soundRef.current.stop(() => soundRef.current.release());
-    }
-
-    const sound = new Sound(fileUrl, null, (error) => {
-      if (error) {
-        console.error("Error loading sound:", error);
-        return;
-      }
-
-      setDuration(sound.getDuration());
-      setProgress(0);
-
-      sound.play((success) => {
-        if (success) {
-          onCompletion();
-        } else {
-          console.error("Playback failed.");
-        }
-      });
-    });
-
-    soundRef.current = sound;
+    await TrackPlayer.add(normalizedMusic);
+    await TrackPlayer.play();
     setIsPlaying(true);
   };
 
-  const playMusic = (music, playlistData, index) => {
-    if (!music) {
-      console.error("Music object is undefined.");
-      return;
-    }
-
-    setPlaylist(playlistData || []);
-    setCurrentMusicIndex(index);
-    setCurrentMusic(music);
-    setArtistName(music.artist_name || "Unknown Artist");
-
-    initializeSound(music.file_url, handleCompletion);
+  // Pause music
+  const pauseMusic = async () => {
+    await TrackPlayer.pause();
+    setIsPlaying(false);
   };
 
-  const pauseMusic = () => {
-    if (soundRef.current && isPlaying) {
-      soundRef.current.pause();
-      setIsPlaying(false);
-    }
+  // Resume music
+  const resumeMusic = async () => {
+    await TrackPlayer.play();
+    setIsPlaying(true);
   };
 
-  const resumeMusic = () => {
-    if (soundRef.current && !isPlaying) {
-      soundRef.current.play(() => {
-        setIsPlaying(true);
-      });
-    }
-  };
-
-  const handleCompletion = () => {
-    const nextIndex = currentMusicIndex + 1;
-
-    if (nextIndex < playlist.length) {
-      playMusic(playlist[nextIndex], playlist, nextIndex);
-    } else {
-      setIsPlaying(false);
-      setProgress(0);
-    }
-  };
-
-  const seekTo = (time) => {
-    if (soundRef.current) {
-      soundRef.current.setCurrentTime(time);
-      setProgress(time);
-    }
+  // Seek to a specific time
+  const seekTo = async (time) => {
+    await TrackPlayer.seekTo(time);
   };
 
   return (
@@ -118,21 +100,20 @@ export const PlayerProvider = ({ children }) => {
       value={{
         currentMusic,
         isPlaying,
-        progress,
+        progress: position,
         duration,
         playMusic,
         pauseMusic,
         resumeMusic,
-        setIsPlaying,
-        setProgress,
         seekTo,
         playlist,
         currentMusicIndex,
-        setCurrentMusicIndex,
-        soundRef,
-        setDuration,
-        setCurrentMusic,
         artistName,
+        profilePicture,
+        setIsPlaying,
+        setCurrentMusic,
+        setCurrentMusicIndex,
+        setPlaylist
       }}
     >
       {children}

@@ -20,13 +20,8 @@ const ArtistNavigationBar = ({ selectedScreen, onNavigationClick }: NavigationBa
       : discoverStyles.footerIcon; // Default color for non-selected icons
   };
 
-  const handleCreatePostClick = () => {
-    setCreatePostVisible(true);
-  };
 
-  const handleCloseCreatePost = () => {
-    setCreatePostVisible(false);
-  };
+ 
 
   return (
     <View style={styles.footerContainer}>
@@ -91,21 +86,25 @@ const ArtistNavigationBar = ({ selectedScreen, onNavigationClick }: NavigationBa
 
 const styles = StyleSheet.create({
   footerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1E1E1E',
-    height: 70,
-    paddingHorizontal: 10,
+    justifyContent: 'space-around',
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    backgroundColor: '#1E1E1E', // Ensure the footer has a background color
+    
   },
   footerButton: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   centerButton: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
     borderRadius: 30,
     backgroundColor: '#2EF3DD',
     justifyContent: 'center',
@@ -118,10 +117,12 @@ const styles = StyleSheet.create({
     tintColor: '#FFFFFF',
   },
   modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Dimmed background
+    backgroundColor: '#333',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
   },
 });
 

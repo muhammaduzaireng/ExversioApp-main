@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, FlatList, Alert, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, FlatList, Alert, RefreshControl, Modal, Button } from 'react-native';
 import artistPostStyles from '../../../styles/artist/artistPostStyles';
 import dashboardStyles from '../../../styles/dashboardStyles';
 import { useNavigation } from '@react-navigation/native';
@@ -7,17 +7,15 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
 import ArtistNavigationBar from '../../components/ArtistNavigationBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Sound from 'react-native-sound';
 import DiscoverScreenForArtist from '../../discover/DiscoverScreen';
 import MusicLibraryPage from '../../artist/MusicLibraryPage';
 import ProfileScreenArtist from '../../profile/ProfileScreenArtist';
 import CreatePost from '../../components/CreatePost';
 import Header from '../../components/Header';
-import TrackPlayer, { usePlaybackState, State as TrackPlayerState, useProgress } from "react-native-track-player";
-import trackPlayerSetup from "../../player/trackPlayerSetup";
 import Slider from "@react-native-community/slider";
 import { formatTime } from '../../components/Utils'; // Import the formatTime function
-
+import Player from '../../components/Player';
+import { usePlayer } from "../../components/PlayerContext"; // Import usePlayer
 
 const ArtistPostScreen = () => {
     const BASE_URL = "https://api.exversio.com"; // Replace 3000 with your server's port
@@ -31,15 +29,17 @@ const ArtistPostScreen = () => {
     const [activeCommentPostId, setActiveCommentPostId] = useState(null);
     const [newCommentText, setNewCommentText] = useState(''); // State to track new comment text
     const [profilePicture, setProfilePicture] = useState(null);
-    const [activeAudioId, setActiveAudioId] = useState(null); // Track active audio post
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [audio, setAudio] = useState(null);
-    const [currentPlaying, setCurrentPlaying] = useState(null);
-      const soundRef = useRef(null);
-      const [refreshing, setRefreshing] = useState(false); // Track pull-to-refresh state
-      const [selectedTab, setSelectedTab] = useState<'All' | 'Music' | 'Videos' | 'Pictures'>('All');
-      const [selectedScreen, setSelectedScreen] = useState<'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost'>('ArtistPostScreen');
-       const progress = useProgress();
+    const [refreshing, setRefreshing] = useState(false); // Track pull-to-refresh state
+    const [selectedTab, setSelectedTab] = useState<'All' | 'Music' | 'Videos' | 'Pictures'>('All');
+    const [selectedScreen, setSelectedScreen] = useState<'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost'>('ArtistPostScreen');
+    const { playMusic, pauseMusic, currentMusic, isPlaying, setIsPlaying } = usePlayer();
+    const { progress, currentPlaying } = usePlayer(); // Destructure the progress and currentPlaying values from the usePlayer hook
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingContent, setEditingContent] = useState('');
+    const [selectedPostId, setSelectedPostId] = useState(null);
+    const [showOptionsModal, setShowOptionsModal] = useState(false);
+
+
     // Fetch artistId from server based on userId in AsyncStorage
     useEffect(() => {
         const fetchArtistIdAndUserId = async () => {
@@ -120,13 +120,12 @@ const ArtistPostScreen = () => {
             Alert.alert('Error', 'Failed to fetch posts.');
         }
     };
-    
+
     useEffect(() => {
         if (artistId && userId) {
             fetchPosts();
         }
     }, [artistId, userId]);
-
 
     // Handle creating a new post
     const selectImage = () => {
@@ -185,12 +184,57 @@ const ArtistPostScreen = () => {
             Alert.alert('Error', 'Please enter some content or select media.');
         }
     };
-
-
+    const handleUpdatePost = async () => {
+        try {
+            const response = await fetch(`${BASE_URL}/update-post`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ postId: selectedPostId, content: editingContent }),
+            });
     
+            const data = await response.json();
     
+            if (data.success) {
+                fetchPosts(); // Refresh posts
+                setShowOptionsModal(false);
+                setIsEditing(false);
+                setEditingContent('');
+                Alert.alert('Success', 'Post updated successfully.');
+            } else {
+                Alert.alert('Error', data.message || 'Failed to update post.');
+            }
+        } catch (error) {
+            console.error('Error updating post:', error);
+            Alert.alert('Error', 'Failed to update post.');
+        }
+    };
     
+    const handleDeletePost = async () => {
+        try {
+            const response = await fetch(`${BASE_URL}/delete-post`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ postId: selectedPostId }),
+            });
     
+            const data = await response.json();
+    
+            if (data.success) {
+                fetchPosts(); // Refresh posts
+                setShowOptionsModal(false);
+                Alert.alert('Success', 'Post deleted successfully.');
+            } else {
+                Alert.alert('Error', data.message || 'Failed to delete post.');
+            }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            Alert.alert('Error', 'Failed to delete post.');
+        }
+    };
     const handleComment = async (postId, commentText) => {
         console.log("Handling comment for post ID:", postId);
         console.log("Comment text:", commentText);
@@ -254,7 +298,6 @@ const ArtistPostScreen = () => {
         }
     };
     
-    
     const handleLike = async (postId) => {
         try {
             const storedUserId = await AsyncStorage.getItem('userId');
@@ -294,121 +337,85 @@ const ArtistPostScreen = () => {
             Alert.alert('Error', 'Failed to like post. Please try again.');
         }
     };
-     const playMusic = async (fileUrl) => {
-           const completeUrl = fileUrl.startsWith("http") ? fileUrl : `${BASE_URL}${fileUrl}`;
-           console.log("Playing music from URL:", completeUrl);
-         
-           try {
-             if (currentPlaying === completeUrl) {
-               // If the same track is clicked again, toggle play/pause
-               if (isPlaying) {
-                 await TrackPlayer.pause();
-                 setIsPlaying(false);
-               } else {
-                 await TrackPlayer.play();
-                 setIsPlaying(true);
-               }
-             } else {
-               // Play new track
-               await TrackPlayer.reset();
-               await TrackPlayer.add({
-                 id: completeUrl, // Use completeUrl as the unique ID
-                 url: completeUrl,
-                 title: 'Track Title',
-                 artist: 'Artist Name',
-                 artwork: 'https://placekitten.com/300/300',
-               });
-               await TrackPlayer.play();
-               setIsPlaying(true);
-               setCurrentPlaying(completeUrl); // Correct reference
-             }
-           } catch (error) {
-             console.error("Error playing music:", error);
-             Alert.alert("Error", "Failed to play music.");
-           }
-         };
-         
-         const pauseMusic = async () => {
-           try {
-             await TrackPlayer.pause();
-             setIsPlaying(false);
-           } catch (error) {
-             console.error("Error pausing music:", error);
-             Alert.alert("Error", "Failed to pause music.");
-           }
-         };
-         
-         const handleSliderChange = async (value) => {
-           await TrackPlayer.seekTo(value);
-         };
+
+    const handleSliderChange = async (value) => {
+        await TrackPlayer.seekTo(value);
+    };
       
-    
-      const onRefresh = async () => {
+    const onRefresh = async () => {
         console.log('Pull-to-refresh triggered');
         setRefreshing(true);
         await fetchPosts(); // Reload posts
         setRefreshing(false); // End refreshing state
     };
+
     const handleNavigationClick = (screen: 'ArtistPostScreen' | 'DiscoverScreenForArtist' | 'MusicLibraryPage' | 'ProfileScreenArtist' | 'CreatePost') => {
         setSelectedScreen(screen); // Update the selected screen
-      };
-      const renderContent = () => {
-        switch (selectedScreen) {
-          
-          case 'DiscoverScreenForArtist':
-            return <DiscoverScreenForArtist />;
-          case 'MusicLibraryPage':
-            return <MusicLibraryPage />;
-          case 'ProfileScreenArtist':
-            return <ProfileScreenArtist />;
-            case 'CreatePost':
-            return <CreatePost />;
-            case 'ArtistPostScreen':
-          default:
-            return <View style={dashboardStyles.container}>
-                <Header selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-                <FlatList
-                    data={posts || []}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={renderPost}
-                    contentContainerStyle={dashboardStyles.contentContainer}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                />
-            </View>;
+    };
+
+    const filterPosts = () => {
+        if (selectedTab === 'All') {
+            return posts;
         }
-        };
-      const renderPost = ({ item }) => {
-        // Enforce HTTPS for media_url
-        const mediaUrl = item.media_url?.startsWith('http://')
-            ? item.media_url.replace('http://', 'https://')
-            : item.media_url;
-            const completeUrl = item.media_url 
-            ? (item.media_url.startsWith("http") ? item.media_url : `${BASE_URL}${item.media_url}`) 
+        if (selectedTab === 'Music') {
+            return posts.filter(post => post.media_type === 'audio');
+        }
+        if (selectedTab === 'Videos') {
+            return posts.filter(post => post.media_type === 'video');
+        }
+        if (selectedTab === 'Pictures') {
+            return posts.filter(post => post.media_type === 'image');
+        }
+        return posts;
+    };
+
+    const renderContent = () => {
+        switch (selectedScreen) {
+            case 'DiscoverScreenForArtist':
+                return <DiscoverScreenForArtist />;
+            case 'MusicLibraryPage':
+                return <MusicLibraryPage />;
+            case 'ProfileScreenArtist':
+                return <ProfileScreenArtist />;
+            case 'CreatePost':
+                return <CreatePost />;
+            case 'ArtistPostScreen':
+            default:
+                return (
+                    <View style={dashboardStyles.container}>
+                        <Header selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+                        <FlatList
+                            data={filterPosts() || []}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={renderPost}
+                            contentContainerStyle={dashboardStyles.contentContainer}
+                            refreshControl={
+                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                            }
+                        />
+                    </View>
+                );
+        }
+    };
+
+    const renderPost = ({ item }) => {
+        const completeUrl = item.media_url
+            ? (item.media_url.startsWith("http") ? item.media_url : `${BASE_URL}${item.media_url}`)
             : null;
-          const isPlayingCurrent = currentPlaying === completeUrl && isPlaying;
-        
+        const isPlayingCurrent = currentPlaying === completeUrl && isPlaying;
     
         return (
             <View style={dashboardStyles.postContainer}>
-                {/* Post Header */}
                 <View style={dashboardStyles.postHeader}>
                     <Image
-                        source={
-                            profilePicture
-                                ? { uri: profilePicture }
-                                : require('../../../assets/profile/profile-image.jpg')
-                        }
+                        source={profilePicture ? { uri: profilePicture } : require('../../../assets/profile/profile-image.jpg')}
                         style={dashboardStyles.avatar}
                     />
                     <View style={dashboardStyles.userInfo}>
                         <View style={dashboardStyles.userRow}>
                             <Text
                                 style={dashboardStyles.username}
-                                onPress={() =>
-                                    navigation.navigate('ArtistProfileScreen', { artistId: item.artist_id })
-                                }
+                                onPress={() => navigation.navigate('ArtistProfileScreen', { artistId: item.artist_id })}
                             >
                                 {item.artist_name || 'Unknown Artist'}
                             </Text>
@@ -418,66 +425,51 @@ const ArtistPostScreen = () => {
                             />
                         </View>
                         <Text style={dashboardStyles.timestamp}>
-  {new Date(item.created_at).toLocaleString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  })}
-</Text>
+                            {new Date(item.created_at).toLocaleString('en-US', {
+                                month: '2-digit',
+                                day: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                            })}
+                        </Text>
                     </View>
+                    <TouchableOpacity onPress={() => {
+                        setSelectedPostId(item.id);
+                        setShowOptionsModal(true);
+                    }}>
+                        <Image
+                            source={require('../../../assets/icons/icons8-three-dots-90.png')}
+                            style={dashboardStyles.moreIcons}
+                        />
+                    </TouchableOpacity>
                 </View>
-    
-                {/* Post Content */}
-                <Text style={dashboardStyles.postText}>{item.content}</Text>
-    
                 
-                {/* Media Display */}
-            {completeUrl && item.media_type === 'image' && <Image source={{ uri: completeUrl }} style={artistPostStyles.postMedia} />}
-      
-      {completeUrl && item.media_type === 'audio' && (
-        <View style={dashboardStyles.trackContainer}>
-          <View style={dashboardStyles.row}>
-            <Image source={profilePicture ? { uri: profilePicture } : require("../../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
-            <View style={dashboardStyles.info}>
-              <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
-            </View>
-            <TouchableOpacity onPress={() => playMusic(completeUrl)}>
-              <Image
-                source={isPlayingCurrent ? require("../../../assets/icons/icons8-pause-90.png") : require("../../../assets/icons/211876_play_icon.png")}
-                style={dashboardStyles.playIcon}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Progress Bar */}
-          {isPlayingCurrent && (
-            <View style={dashboardStyles.progressBarContainer}>
-              
-              <Slider
-                style={dashboardStyles.slider}
-                minimumValue={0}
-                maximumValue={progress.duration}
-                value={progress.position}
-                onSlidingComplete={handleSliderChange}
-                minimumTrackTintColor="#2EF3DD"
-                maximumTrackTintColor="#999"
-                thumbTintColor="#2EF3DD"
-              />
-              <View style={dashboardStyles.progressTime}>
-              <Text style={dashboardStyles.time}>{formatTime(progress.position)}</Text>
-              <Text style={dashboardStyles.timeRight}>{formatTime(progress.duration)}</Text>
-            </View>
-            </View>
-            
-          )}
-          
-        </View>
-      )}
-    
-                {/* Actions: Likes and Comments */}
+                <Text style={dashboardStyles.postText}>{item.content}</Text>
+                {completeUrl && item.media_type === 'image' && <Image source={{ uri: completeUrl }} style={artistPostStyles.postMedia} />}
+                {completeUrl && item.media_type === 'audio' && (
+                    <View style={dashboardStyles.trackContainer}>
+                        <View style={dashboardStyles.row}>
+                            <Image source={profilePicture ? { uri: profilePicture } : require("../../../assets/profile/profile-image.jpg")} style={dashboardStyles.trackAvatar} />
+                            <View style={dashboardStyles.info}>
+                                <Text style={dashboardStyles.trackTitle} numberOfLines={1}>{item.music_title || 'Unknown Track'}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => playMusic({
+                                music_id: item.id,
+                                file_url: completeUrl,
+                                music_title: item.music_title || 'Track Title',
+                                artist_name: item.artist_name || 'Artist Name',
+                                profile_picture: profilePicture || 'https://placekitten.com/300/300'
+                            })}>
+                                <Image
+                                    source={isPlayingCurrent ? require("../../../assets/icons/icons8-pause-90.png") : require("../../../assets/icons/211876_play_icon.png")}
+                                    style={dashboardStyles.playIcon}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
                 <View style={dashboardStyles.postActions}>
                     <Text style={dashboardStyles.likeCount}>{item.like_count || 0}</Text>
                     <TouchableOpacity onPress={() => handleLike(item.id)}>
@@ -499,8 +491,6 @@ const ArtistPostScreen = () => {
                         />
                     </TouchableOpacity>
                 </View>
-    
-                {/* Comment Input */}
                 {activeCommentPostId === item.id && (
                     <View style={dashboardStyles.commentInputContainer}>
                         <TextInput
@@ -515,8 +505,6 @@ const ArtistPostScreen = () => {
                         </TouchableOpacity>
                     </View>
                 )}
-    
-                {/* Comments Display */}
                 {Array.isArray(item.comments) && item.comments.length > 0 ? (
                     item.comments.map((comment, index) => (
                         <View key={comment?.id || index} style={dashboardStyles.commentContainer}>
@@ -532,19 +520,55 @@ const ArtistPostScreen = () => {
                     <Text style={dashboardStyles.noCommentsText}>No comments yet</Text>
                 )}
             </View>
+            
         );
     };
     
 
     return (
-       
-            <View style={artistPostStyles.container}>
+        <View style={artistPostStyles.container}>
             {renderContent()}
-
+            <Player />
             <ArtistNavigationBar selectedScreen={selectedScreen} onNavigationClick={handleNavigationClick} />
-            </View>
-           
-       
+            
+            <Modal
+                transparent={true}
+                animationType="slide"
+                visible={showOptionsModal}
+                onRequestClose={() => setShowOptionsModal(false)}
+            >
+                <View style={dashboardStyles.modalContainer}>
+                    <View style={dashboardStyles.modalContent}>
+                        <TouchableOpacity onPress={() => setShowOptionsModal(false)} style={dashboardStyles.closeButton}>
+                            <Text style={dashboardStyles.closeButtonText}>X</Text>
+                        </TouchableOpacity>
+                        {isEditing ? (
+                            <>
+                                <TextInput
+                                    style={dashboardStyles.modalInput}
+                                    value={editingContent}
+                                    onChangeText={setEditingContent}
+                                    placeholder="Edit your post content"
+                                />
+                                <TouchableOpacity onPress={() => setShowOptionsModal(false)} style={dashboardStyles.closeButton}>
+                                <Button  title="Save" onPress={handleUpdatePost} />
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <Button title="Edit" onPress={() => {
+                                    setIsEditing(true);
+                                    setEditingContent(posts.find(post => post.id === selectedPostId)?.content || '');
+                                }} />
+                                <TouchableOpacity onPress={() => setShowOptionsModal(false)} style={dashboardStyles.closeButton}>
+                                <Button title="Delete" onPress={handleDeletePost} />
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+        </View>
     );
 };
 

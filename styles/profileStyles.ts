@@ -4,96 +4,148 @@ const { width, height } = Dimensions.get('window');
 
 const profileStyles = StyleSheet.create({
   mainContainer: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-    paddingTop: height * 0.05, // Add space on top
+    flex: 1, // Ensure ScrollView takes full height
+    backgroundColor: '#121212', // Dark theme
+    paddingTop: height * 0.05,
+    paddingBottom: height * 0.1,
   },
   container: {
-    padding: width * 0.05, // Responsive padding
-    flex: 1,
+    flexGrow: 1, // Allow content to grow within ScrollView
+    marginBottom: height * 0.2,
+    
   },
   title: {
     color: '#fff',
-    fontSize: width * 0.06, // Responsive font size
+    fontSize: width * 0.065, 
     fontWeight: 'bold',
-    marginBottom: height * 0.02,
-  },
-  headerContainer: {
-    position: 'relative',
-
-    paddingBottom: 20,
-    color: '#fff',
-  },
-  coverImage: {
-    width: '100%',
-    height: 200,
-    borderBottomLeftRadius: 50,
-    borderBottomRightRadius: 50,
-  },
-  artistInfoContainer: {
-    alignItems: 'center',
-    marginTop: -50,
-  },
-  artistName: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  artistDescription: {
-    color: '#ccc',
+    marginBottom: height * 0.03,
     textAlign: 'center',
-    marginHorizontal: 20,
-    marginBottom: 10,
   },
-  profileContainer: {
+  profileHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    backgroundColor: '#1E1E1E',
+    padding: height * 0.02,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 4,
-    borderColor: '#1E1E1E',
-    marginBottom: 10,
-    marginTop: -50, // Adjust to move the profile image up
+  avatar: {
+    width: width * 0.22, 
+    height: width * 0.22, 
+    borderRadius: width * 0.11, 
+    borderWidth: 3,
+    borderColor: '#2EF3DD',
+  },
+  userInfo: {
+    marginLeft: width * 0.04,
+  },
+  userName: {
+    color: '#fff',
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+  },
+  userEmail: {
+    color: '#aaa',
+    fontSize: width * 0.04,
   },
   menuItems: {
-    marginTop: height * 0.02,
+    marginTop: height * 0.03,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: height * 0.02, // Responsive padding
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    paddingVertical: height * 0.018,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
+    marginBottom: height * 0.015,
+    paddingHorizontal: width * 0.04,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   menuIcon: {
-    width: width * 0.06, // Responsive width
-    height: width * 0.06, // Responsive height
-    tintColor: '#fff',
+    width: width * 0.07,
+    height: width * 0.07,
+    tintColor: '#2EF3DD',
     marginRight: width * 0.04,
   },
   menuText: {
     color: '#fff',
-    fontSize: width * 0.045, // Responsive font size
+    fontSize: width * 0.045,
+    fontWeight: '500',
   },
   becomeArtistButton: {
-    backgroundColor: '#007AFF',
-    padding: height * 0.015, // Responsive padding
-    borderRadius: 5,
-    width: width * 0.5, // Responsive width for the button
+    backgroundColor: '#2EF3DD',
+    paddingVertical: height * 0.016,
+    borderRadius: 30,
+    width: width * 0.6,
     alignItems: 'center',
-    marginTop: height * 0.02,
-    alignSelf: 'center', // Center the button
+    marginTop: height * 0.04,
+    alignSelf: 'center',
+    shadowColor: '#2EF3DD',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
   },
   becomeArtistButtonText: {
-    color: '#fff',
-    fontSize: width * 0.045, // Responsive font size
+    color: '#121212',
+    fontSize: width * 0.045,
     fontWeight: 'bold',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalCloseButton: {
+    alignSelf: 'flex-end',
+  },
+  modalCloseButtonText: {
+    fontSize: 18,
+    color: '#888',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalInput: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 20,
+  },
+  subscriberItem:{
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: height * 0.018,
+   fontWeight: 'bold',
+    borderRadius: 10,
+    marginBottom: height * 0.015,
+    paddingHorizontal: width * 0.04,
+   
+   
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  }
+  
 });
-
 
 export default profileStyles;

@@ -77,7 +77,7 @@ const artistProfileStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 10,
-    backgroundColor: '#000000',
+    backgroundColor: '#1E1E1E',
     padding: 10,
   },
   tabButtonActive: {

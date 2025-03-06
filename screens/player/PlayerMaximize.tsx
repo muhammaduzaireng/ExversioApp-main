@@ -3,7 +3,8 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import playerMaximizeStyles from "../../styles/playerMaximizeStyles";
 import { useNavigation } from "@react-navigation/native";
 import { usePlayer } from "../../screens/components/PlayerContext";
-import Sound from "react-native-sound";
+import TrackPlayer, { useProgress, State as TrackPlayerState } from "react-native-track-player";
+import Slider from "@react-native-community/slider";
 
 const PlayerMaximize = () => {
   const navigation = useNavigation();
@@ -12,109 +13,49 @@ const PlayerMaximize = () => {
     playlist,
     currentMusicIndex,
     isPlaying,
-    pauseMusic,
-    resumeMusic,
-    progress,
-    duration,
-    soundRef,
     setCurrentMusic,
     setCurrentMusicIndex,
     setIsPlaying,
-    setProgress,
-    setDuration,
-    artistName
+    artistName,
   } = usePlayer();
 
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
+
+  const progress = useProgress();
 
   useEffect(() => {
     console.log("PlayerMaximize Loaded:", {
       currentMusic,
       currentMusicIndex,
       playlist,
-      artistName
+      artistName,
     });
 
-    // Sync progress and duration on mount
-    if (soundRef.current) {
-      soundRef.current.getCurrentTime((time) => setProgress(time || 0));
-      setDuration(soundRef.current.getDuration());
-    }
-
     return () => {
-      if (soundRef?.current) {
-        soundRef.current.stop();
-      }
+      // No need to reset TrackPlayer here, as the PlayerContext will manage the player state
     };
   }, [currentMusic, currentMusicIndex]);
 
   useEffect(() => {
-    let interval = null;
-    if (isPlaying && soundRef?.current) {
-      interval = setInterval(() => {
-        soundRef.current.getCurrentTime((time) => {
-          setProgress(time || 0);
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
+    const updateIsPlaying = async () => {
+      const playbackState = await TrackPlayer.getState();
+      setIsPlaying(playbackState === TrackPlayerState.Playing);
+    };
+
+    updateIsPlaying();
   }, [isPlaying]);
 
-  const handlePlayPause = () => {
-    if (soundRef.current) {
-      if (isPlaying) {
-        // Pause music
-        soundRef.current.pause();
-        console.log("Music paused globally.");
-      } else {
-        // Resume music
-        soundRef.current.play((success) => {
-          if (success) {
-            console.log("Music resumed globally.");
-          } else {
-            console.error("Failed to resume music.");
-          }
-        });
-      }
-      // Toggle the play/pause state
-      setIsPlaying(!isPlaying);
+  const handlePlayPause = async () => {
+    if (isPlaying) {
+      await TrackPlayer.pause();
     } else {
-      console.error("soundRef.current is not initialized.");
+      await TrackPlayer.play();
     }
+    setIsPlaying(!isPlaying); // Update global state
   };
-  
-  
-  const playMusic = (fileUrl) => {
-    if (soundRef.current) {
-      soundRef.current.stop(() => {
-        soundRef.current.release();
-      });
-    }
-  
-    soundRef.current = new Sound(fileUrl, null, (error) => {
-      if (error) {
-        console.error("Failed to load sound", error);
-        return;
-      }
-      setDuration(soundRef.current.getDuration());
-      setProgress(0);
-      setIsPlaying(true);
-  
-      soundRef.current.play((success) => {
-        if (success) {
-          console.log("Playback completed.");
-          setIsPlaying(false);
-        } else {
-          console.error("Playback failed.");
-        }
-      });
-    });
-  };
-  
-  
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const nextIndex = shuffle
       ? Math.floor(Math.random() * playlist.length)
       : currentMusicIndex + 1;
@@ -123,55 +64,24 @@ const PlayerMaximize = () => {
       const nextMusic = playlist[nextIndex];
       setCurrentMusic(nextMusic);
       setCurrentMusicIndex(nextIndex);
-      loadMusic(nextMusic.file_url);
+      await TrackPlayer.skip(nextMusic.file_url);
+      await TrackPlayer.play();
     } else {
       console.log("End of playlist.");
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     const prevIndex = currentMusicIndex - 1;
 
     if (prevIndex >= 0) {
       const prevMusic = playlist[prevIndex];
       setCurrentMusic(prevMusic);
       setCurrentMusicIndex(prevIndex);
-      loadMusic(prevMusic.file_url);
+      await TrackPlayer.skip(prevMusic.file_url);
+      await TrackPlayer.play();
     } else {
       console.log("No previous music available.");
-    }
-  };
-
-  const loadMusic = (url) => {
-    if (!url) {
-      console.error("No URL provided for music.");
-      return;
-    }
-
-    if (soundRef?.current) {
-      soundRef.current.stop(() => {
-        soundRef.current.release();
-        soundRef.current = new Sound(url, null, (error) => {
-          if (error) {
-            console.error("Failed to load music:", error);
-            return;
-          }
-          setDuration(soundRef.current.getDuration());
-          setProgress(0);
-          setIsPlaying(true);
-          soundRef.current.play(() => {
-            console.log("Playback started.");
-          });
-        });
-      });
-    }
-  };
-
-  const handleCompletion = () => {
-    if (repeat) {
-      loadMusic(currentMusic.file_url);
-    } else {
-      handleNext();
     }
   };
 
@@ -182,6 +92,10 @@ const PlayerMaximize = () => {
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
+  const handleSliderChange = async (value) => {
+    await TrackPlayer.seekTo(value);
+  };
+
   return (
     <View style={playerMaximizeStyles.container}>
       <View style={playerMaximizeStyles.mainContainer}>
@@ -189,6 +103,15 @@ const PlayerMaximize = () => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={playerMaximizeStyles.backButton}>← Back</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={playerMaximizeStyles.songInfoContainer}>
+          <Text style={playerMaximizeStyles.songName}>
+            {currentMusic?.title || "Unknown Song"}
+          </Text>
+          <Text style={playerMaximizeStyles.artistName}>
+            {artistName}
+          </Text>
         </View>
 
         <View style={playerMaximizeStyles.albumArtContainer}>
@@ -202,28 +125,20 @@ const PlayerMaximize = () => {
           />
         </View>
 
-        <View style={playerMaximizeStyles.songInfoContainer}>
-          <Text style={playerMaximizeStyles.songName}>
-            {currentMusic?.music_title || "Unknown Song"}
-          </Text>
-          <Text style={playerMaximizeStyles.artistName}>
-        {currentMusic?.artist_name  || "Unknown Artist"}
-</Text>
-
-        </View>
-
         <View style={playerMaximizeStyles.controlsContainer}>
           <View style={playerMaximizeStyles.progressContainer}>
-            <Text style={playerMaximizeStyles.time}>{formatTime(progress)}</Text>
-            <View style={playerMaximizeStyles.progressBarContainer}>
-              <View
-                style={{
-                  ...playerMaximizeStyles.progressBar,
-                  width: `${(progress / duration) * 100}%`,
-                }}
-              />
-            </View>
-            <Text style={playerMaximizeStyles.time}>{formatTime(duration)}</Text>
+            <Text style={playerMaximizeStyles.time}>{formatTime(progress.position)}</Text>
+            <Slider
+              style={playerMaximizeStyles.slider}
+              minimumValue={0}
+              maximumValue={progress.duration}
+              value={progress.position}
+              onSlidingComplete={handleSliderChange}
+              minimumTrackTintColor="#2EF3DD"
+              maximumTrackTintColor="#fff"
+              thumbTintColor="#2EF3DD"
+            />
+            <Text style={playerMaximizeStyles.time}>{formatTime(progress.duration)}</Text>
           </View>
 
           <View style={playerMaximizeStyles.controlButtonsContainer}>

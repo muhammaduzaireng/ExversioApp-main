@@ -129,13 +129,7 @@ const DiscoverScreen = () => {
 )}
 
 
-      {/* Player component with required props */}
-      <Player
-        currentMusic={currentMusic}
-        isPlaying={isPlaying}
-        setPlaying={setIsPlaying}
-        soundRef={soundRef}
-      />
+      
     </View>
   );
 };

@@ -107,8 +107,8 @@ const playerMaximizeStyles = StyleSheet.create({
     alignItems: 'center',
   },
   playIcon: {
-    width: width * 0.03,
-    height: width * 0.03,
+    width: width * 0.04,
+    height: width * 0.04,
     tintColor: '#fff',
   },
   footer: {
@@ -131,6 +131,12 @@ const playerMaximizeStyles = StyleSheet.create({
     color: "#2EF3DD",
     marginRight: width * 0.02, // 2% of screen width
   },
+  slider:{
+    width: '80%',
+    height: 40,
+    marginLeft: '3%',
+    marginRight: '3%',
+  }
 });
 
 export default playerMaximizeStyles;

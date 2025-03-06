@@ -45,15 +45,15 @@ const Header = ({ selectedTab, setSelectedTab }) => {
 const styles = StyleSheet.create({
     headerContainer: {
       alignItems: 'center',
-      paddingVertical: 10,
+      
       backgroundColor: '#1E1E1E', // Adjust as needed
     },
     logoContainer: {
       marginBottom: 10,
     },
     logo: {
-        width: 200,
-        height: 32.68,
+        width: 150,
+        height: 25,
 
     },
     tabsContainer: {

@@ -9,8 +9,8 @@ const styles = StyleSheet.create({
       marginBottom: 10,
     },
     logo: {
-      width: 100, // Adjust as needed
-      height: 40, // Adjust as needed
+      width: 60, // Adjust as needed
+      height: 5, // Adjust as needed
     },
     tabsContainer: {
       flexDirection: 'row',

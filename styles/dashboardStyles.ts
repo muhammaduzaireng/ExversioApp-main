@@ -62,30 +62,41 @@ const dashboardStyles = StyleSheet.create({
     justifyContent: 'space-between',
     width: 50, // Adjust based on your icon size and spacing
   },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
+ 
   postMedia: {
     width: '100%',
     height: 200,
     borderRadius: 10,
     marginBottom: 10,
   },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+  },
   avatar: {
     width: 50,
     height: 50,
-    borderRadius: 50,
+    borderRadius: 25,
     marginRight: 10,
   },
   userInfo: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  usernameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   username: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    marginRight: 3, // Space between name and verified icon
+  },
+  verifiedIcon: {
+    width: 16,
+    height: 16,
   },
   timestamp: {
     color: '#aaa',
@@ -126,10 +137,7 @@ const dashboardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 },
-verifiedIcon: {
-    width: 16,
-    height: 16,
-},
+
 modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -194,7 +202,7 @@ commentText: {
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 20,
+    paddingVertical: 30,
     borderTopWidth: 1,
     borderTopColor: '#333',
     backgroundColor: '#1E1E1E', // Ensure the footer has a background color
@@ -243,6 +251,12 @@ moreIcon: {
     marginRight:10,
     marginLeft:10,
 },
+moreIcons: {
+  width:16,
+  height:16,
+  color: 'white',
+  
+},
 noCommentsText:{
     color: '#fff',
     fontSize: 14,
@@ -277,11 +291,7 @@ trackArtist: {
   color: "#888",
   fontSize: 12,
 },
-playIcon: {
-  width: 16,
-  height: 18,
-  marginHorizontal: 8,
-},
+
 maximizeIcon: {
   width: 20,
   height: 20,
