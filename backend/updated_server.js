@@ -1407,6 +1407,50 @@ app.get('/check-subscription', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to check subscription' });
   }
 });
+//get list of subscribers
+app.get('/get-subscription-list', async (req, res) => {
+  const { artist_id } = req.query;
+
+  try {
+    const checkQuery = `
+      SELECT users.* FROM subscriptions
+      JOIN users ON subscriptions.user_id = users.id
+      WHERE subscriptions.artist_id = ?
+    `;
+    const [results] = await db.query(checkQuery, [artist_id]);
+
+    if (results.length > 0) {
+      return res.json({ success: true, subscribers: results });
+    } else {
+      return res.json({ success: true, subscribers: [] });
+    }
+  } catch (err) {
+    console.error('Database error in check subscription:', err);
+    res.status(500).json({ success: false, message: 'Failed to get subscribers' });
+  }
+});
+//get list of subscribed artists
+app.get('/get-subscribed-artists', async (req, res) => {
+  const { user_id } = req.query;
+
+  try {
+    const checkQuery = `
+      SELECT artists.* FROM subscriptions
+      JOIN artists ON subscriptions.artist_id = artists.id
+      WHERE subscriptions.user_id = ?
+    `;
+    const [results] = await db.query(checkQuery, [user_id]);
+
+    if (results.length > 0) {
+      return res.json({ success: true, subscribed: results });
+    } else {
+      return res.json({ success: true, subscribed: [] });
+    }
+  } catch (err) {
+    console.error('Database error in get subscribed artists:', err);
+    res.status(500).json({ success: false, message: 'Failed to get subscribed artists' });
+  }
+});
 //feed
 // app.get('/get-feed', (req, res) => {
 //   const userId = req.query.userId;
