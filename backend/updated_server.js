@@ -1435,9 +1435,10 @@ app.get('/get-subscribed-artists', async (req, res) => {
 
   try {
     const checkQuery = `
-      SELECT artists.* FROM subscriptions
-      JOIN artists ON subscriptions.artist_id = artists.id
-      WHERE subscriptions.user_id = ?
+      SELECT DISTINCT ar.name
+FROM subscriptions s
+JOIN approved_artists ar ON s.artist_id = ar.artist_id
+WHERE s.user_id = ?
     `;
     const [results] = await db.query(checkQuery, [user_id]);
 
