@@ -1559,7 +1559,7 @@ app.get('/get-feed', async (req, res) => {
     LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
     LEFT JOIN comments ON posts.id = comments.post_id
     LEFT JOIN users ON comments.user_id = users.id
-    WHERE subscriptions.user_id = ? ${artistId ? '' : 'AND posts.artist_id != ?'}
+    WHERE (subscriptions.user_id = ? OR posts.artist_id = ?) -- Include your own posts
     GROUP BY posts.id
     ORDER BY posts.created_at DESC;
   `;
