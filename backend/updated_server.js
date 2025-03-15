@@ -1644,7 +1644,6 @@ app.get('/get-feed', async (req, res) => {
     SELECT 
       posts.*, 
       approved_artists.name AS artist_name,
-      -- Fetch profile picture with a condition on user_id dynamically
       (SELECT profile_picture 
        FROM profile 
        WHERE profile.user_id = approved_artists.user_id 
@@ -1656,14 +1655,14 @@ app.get('/get-feed', async (req, res) => {
       END AS isLiked,
       COALESCE(
           JSON_ARRAYAGG(
-              CASE 
+              DISTINCT CASE 
                   WHEN comments.id IS NOT NULL THEN 
                       JSON_OBJECT(
                           'id', comments.id, 
                           'text', comments.comment_text,
                           'user_id', comments.user_id,
                           'user_name', users.name,
-                          'user_username', users.username,  -- Include the username of the user
+                          'user_username', users.username,
                           'created_at', comments.created_at
                       )
                   ELSE NULL
