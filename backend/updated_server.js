@@ -1516,6 +1516,122 @@ WHERE s.user_id = ?
 //     res.json({ success: true, posts: formattedPosts });
 //   });
 // });
+
+//will use on demand
+// app.get('/get-feed', async (req, res) => {
+//   const userId = req.query.userId;
+
+//   const query = `
+//     SELECT 
+//     posts.*, 
+//     approved_artists.name AS artist_name,
+//     -- Fetch profile picture with a condition on user_id dynamically
+//     (SELECT profile_picture 
+//      FROM profile 
+//      WHERE profile.user_id = approved_artists.user_id 
+//      LIMIT 1) AS artist_profile_picture,
+//     (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
+//     EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) AS isLiked,
+//     COALESCE(
+//         JSON_ARRAYAGG(
+//             CASE 
+//                 WHEN comments.id IS NOT NULL THEN 
+//                     JSON_OBJECT(
+//                         'id', comments.id, 
+//                         'text', comments.comment_text,
+//                         'user_id', comments.user_id,
+//                         'user_name', users.name,
+//                         'user_username', users.username,  -- Include the username of the user
+//                         'created_at', comments.created_at
+//                     )
+//                 ELSE NULL
+//             END
+//         ), '[]'
+//     ) AS comments
+// FROM posts
+// LEFT JOIN subscriptions ON posts.artist_id = subscriptions.artist_id
+// LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
+// LEFT JOIN comments ON posts.id = comments.post_id
+// LEFT JOIN users ON comments.user_id = users.id
+// WHERE subscriptions.user_id = ?
+// GROUP BY posts.id
+// ORDER BY posts.created_at DESC;
+
+//   `;
+
+
+//   try {
+//     // Use a promise-based query
+//     const [posts] = await db.query(query, [userId, userId]);
+
+//     const formattedPosts = posts.map(post => {
+//       let parsedComments;
+//       try {
+//         parsedComments = JSON.parse(post.comments || '[]'); // Safely parse the comments JSON
+//         // Ensure comments are filtered to remove null values
+//         parsedComments = parsedComments.filter(comment => comment !== null);
+//       } catch (err) {
+//         console.error(`Error parsing comments for post ${post.id}:`, err);
+//         parsedComments = [];
+//       }
+
+//       return {
+//         ...post,
+//         isLiked: post.isLiked === 1, // Convert to boolean
+//         comments: parsedComments, // Use filtered comments
+//         comment_count: parsedComments.length, // Use the actual length of parsed comments
+//         like_count: post.like_count || 0, // Ensure like_count is a valid number
+//         artist_profile_picture: post.artist_profile_picture || null, // Include the artist's profile picture
+//       };
+//     });
+
+//     res.json({ success: true, posts: formattedPosts });
+//   } catch (err) {
+//     console.error('Error fetching feed:', err);
+//     res.status(500).json({ success: false, message: 'Failed to fetch feed' });
+//   }
+// });
+
+// const query = `
+//   SELECT 
+//     posts.*, 
+//     approved_artists.name AS artist_name,
+//     -- Fetch profile picture with a condition on user_id dynamically
+//     (SELECT profile_picture 
+//      FROM profile 
+//      WHERE profile.user_id = approved_artists.user_id 
+//      LIMIT 1) AS artist_profile_picture,
+//     (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
+//     CASE 
+//       WHEN EXISTS (SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) THEN 1
+//       ELSE 0
+//     END AS isLiked,
+//     COALESCE(
+//         JSON_ARRAYAGG(
+//             CASE 
+//                 WHEN comments.id IS NOT NULL THEN 
+//                     JSON_OBJECT(
+//                         'id', comments.id, 
+//                         'text', comments.comment_text,
+//                         'user_id', comments.user_id,
+//                         'user_name', users.name,
+//                         'user_username', users.username,  -- Include the username of the user
+//                         'created_at', comments.created_at
+//                     )
+//                 ELSE NULL
+//             END
+//         ), '[]'
+//     ) AS comments
+//   FROM posts
+//   LEFT JOIN subscriptions ON posts.artist_id = subscriptions.artist_id
+//   LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
+//   LEFT JOIN comments ON posts.id = comments.post_id
+//   LEFT JOIN users ON comments.user_id = users.id
+//   WHERE subscriptions.user_id = ? AND posts.artist_id != ?
+//   GROUP BY posts.id
+//   ORDER BY posts.created_at DESC;
+// `;
+
 app.get('/get-feed', async (req, res) => {
   const { userId, artistId } = req.query;
 
@@ -1524,7 +1640,7 @@ app.get('/get-feed', async (req, res) => {
   }
 
   // Define the base query
-  const query = `
+  let query = `
     SELECT 
       posts.*, 
       approved_artists.name AS artist_name,
@@ -1559,14 +1675,25 @@ app.get('/get-feed', async (req, res) => {
     LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
     LEFT JOIN comments ON posts.id = comments.post_id
     LEFT JOIN users ON comments.user_id = users.id
-    WHERE (subscriptions.user_id = ? OR posts.artist_id = ?) -- Include your own posts
-    GROUP BY posts.id
-    ORDER BY posts.created_at DESC;
+    WHERE subscriptions.user_id = ?
   `;
 
+  // If the user is an artist, include their own posts
+  if (artistId) {
+    query += ' OR posts.artist_id = ?'; // Include posts where the artist_id matches the logged-in artist
+  }
+
+  query += ' GROUP BY posts.id ORDER BY posts.created_at DESC;';
+
   try {
-    // Execute the query with parameters
-    const [posts] = await db.query(query, [userId, userId, artistId || userId]);
+    // Prepare query parameters
+    const queryParams = [userId, userId];
+    if (artistId) {
+      queryParams.push(artistId); // Add artistId as a parameter if it exists
+    }
+
+    // Execute the query
+    const [posts] = await db.query(query, queryParams);
 
     // Format the posts
     const formattedPosts = posts.map(post => {
@@ -1596,10 +1723,6 @@ app.get('/get-feed', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch feed' });
   }
 });
-
-
-
-
 
 // const uploadDir = path.join(__dirname, "uploads");
 // if (!fs.existsSync(uploadDir)) {
