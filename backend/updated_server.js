@@ -1517,50 +1517,58 @@ WHERE s.user_id = ?
 //   });
 // });
 app.get('/get-feed', async (req, res) => {
-  const userId = req.query.userId;
+  const { userId, artistId } = req.query;
 
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'userId is required' });
+  }
+
+  // Define the base query
   const query = `
     SELECT 
-    posts.*, 
-    approved_artists.name AS artist_name,
-    -- Fetch profile picture with a condition on user_id dynamically
-    (SELECT profile_picture 
-     FROM profile 
-     WHERE profile.user_id = approved_artists.user_id 
-     LIMIT 1) AS artist_profile_picture,
-    (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
-    EXISTS(SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) AS isLiked,
-    COALESCE(
-        JSON_ARRAYAGG(
-            CASE 
-                WHEN comments.id IS NOT NULL THEN 
-                    JSON_OBJECT(
-                        'id', comments.id, 
-                        'text', comments.comment_text,
-                        'user_id', comments.user_id,
-                        'user_name', users.name,
-                        'user_username', users.username,  -- Include the username of the user
-                        'created_at', comments.created_at
-                    )
-                ELSE NULL
-            END
-        ), '[]'
-    ) AS comments
-FROM posts
-LEFT JOIN subscriptions ON posts.artist_id = subscriptions.artist_id
-LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
-LEFT JOIN comments ON posts.id = comments.post_id
-LEFT JOIN users ON comments.user_id = users.id
-WHERE subscriptions.user_id = ?
-GROUP BY posts.id
-ORDER BY posts.created_at DESC;
-
+      posts.*, 
+      approved_artists.name AS artist_name,
+      -- Fetch profile picture with a condition on user_id dynamically
+      (SELECT profile_picture 
+       FROM profile 
+       WHERE profile.user_id = approved_artists.user_id 
+       LIMIT 1) AS artist_profile_picture,
+      (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS like_count,
+      CASE 
+        WHEN EXISTS (SELECT 1 FROM likes WHERE likes.post_id = posts.id AND likes.user_id = ?) THEN 1
+        ELSE 0
+      END AS isLiked,
+      COALESCE(
+          JSON_ARRAYAGG(
+              CASE 
+                  WHEN comments.id IS NOT NULL THEN 
+                      JSON_OBJECT(
+                          'id', comments.id, 
+                          'text', comments.comment_text,
+                          'user_id', comments.user_id,
+                          'user_name', users.name,
+                          'user_username', users.username,  -- Include the username of the user
+                          'created_at', comments.created_at
+                      )
+                  ELSE NULL
+              END
+          ), '[]'
+      ) AS comments
+    FROM posts
+    LEFT JOIN subscriptions ON posts.artist_id = subscriptions.artist_id
+    LEFT JOIN approved_artists ON posts.artist_id = approved_artists.artist_id
+    LEFT JOIN comments ON posts.id = comments.post_id
+    LEFT JOIN users ON comments.user_id = users.id
+    WHERE subscriptions.user_id = ? ${artistId ? '' : 'AND posts.artist_id != ?'}
+    GROUP BY posts.id
+    ORDER BY posts.created_at DESC;
   `;
 
   try {
-    // Use a promise-based query
-    const [posts] = await db.query(query, [userId, userId]);
+    // Execute the query with parameters
+    const [posts] = await db.query(query, [userId, userId, artistId || userId]);
 
+    // Format the posts
     const formattedPosts = posts.map(post => {
       let parsedComments;
       try {
